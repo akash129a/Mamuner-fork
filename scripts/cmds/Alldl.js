@@ -2,100 +2,118 @@ const axios = require("axios");
 const fs = require("fs-extra");
 const path = require("path");
 
-const baseApiUrl = async () => {
-        const base = await axios.get("https://raw.githubusercontent.com/mahmudx7/HINATA/main/baseApiUrl.json");
-        return base.data.mahmud;
-};
-
 module.exports = {
-        config: {
-                name: "alldl",
-                aliases: ["download"],
-                version: "1.7",
-                author: "MahMUD",
-                countDown: 10,
-                role: 0,
-                description: {
-                        bn: "যেকোনো সোশ্যাল মিডিয়া ভিডিও ডাউনলোড করুন (FB, TT, YT, IG)",
-                        en: "Download videos from any social media (FB, TT, YT, IG)",
-                        vi: "Tải xuống video từ bất kỳ phương tiện truyền thông xã hội nào"
-                },
-                category: "media",
-                guide: {
-                        bn: '   {pn} <লিঙ্ক>: ভিডিও লিঙ্ক দিন'
-                                + '\n   অথবা ভিডিও লিঙ্কের রিপ্লাই দিয়ে ব্যবহার করুন',
-                        en: '   {pn} <link>: Provide the video link'
-                                + '\n   Or reply to a video link',
-                        vi: '   {pn} <liên kết>: Cung cấp liên kết video'
-                                + '\n   Hoặc phản hồi một liên kết video'
-                }
+    config: {
+        name: "autodl",
+        version: "2.0",
+        author: "আকাশ",
+        countDown: 5,
+        role: 0,
+        category: "media",
+        description: {
+            en: "Automatically download videos from supported links",
+            bn: "যেকোনো সাপোর্টেড লিঙ্ক থেকে স্বয়ংক্রিয়ভাবে ভিডিও ডাউনলোড করুন",
+            vi: "Tự động tải video từ các liên kết được hỗ trợ"
         },
-
-        langs: {
-                bn: {
-                        noLink: "× বেবি, একটি সঠিক ভিডিও লিঙ্ক দাও অথবা লিঙ্কে রিপ্লাই দাও! 🔗",
-                        success: "𝐇𝐞𝐫𝐞'𝐬 𝐲𝐨𝐮𝐫 𝐝𝐨𝐰𝐧𝐥𝐨𝐚𝐝 𝐯𝐢𝐝𝐞𝐨 𝐛𝐚𝐛𝐲 <😘",
-                        error: "× ডাউনলোড করতে সমস্যা হয়েছে: %1। প্রয়োজনে Contact MahMUD।"
-                },
-                en: {
-                        noLink: "× Baby, please provide a valid video link or reply to one! 🔗",
-                        success: "𝐇𝐞𝐫𝐞'𝐬 𝐲𝐨𝐮𝐫 𝐝𝐨𝐰𝐧𝐥𝐨𝐚𝐝 𝐯𝐢𝐝𝐞𝐨 𝐛𝐚𝐛𝐲 <😘",
-                        error: "× Failed to download: %1. Contact MahMUD for help."
-                },
-                vi: {
-                        noLink: "× Cưng ơi, vui lòng cung cấp liên kết video hợp lệ! 🔗",
-                        success: "𝐇𝐞𝐫𝐞'𝐬 𝐲𝐨𝐮𝐫 𝐝𝐨𝐰𝐧𝐥𝐨𝐚𝐝 𝐯𝐢𝐝𝐞𝐨 𝐛𝐚𝐛𝐲 <😘",
-                        error: "× Lỗi tải xuống: %1. Liên hệ MahMUD để hỗ trợ."
-                }
-        },
-
-        onStart: async function ({ api, event, args, message, getLang }) {
-                const authorName = String.fromCharCode(77, 97, 104, 77, 85, 68);
-                if (this.config.author !== authorName) {
-                        return api.sendMessage("You are not authorized to change the author name.", event.threadID, event.messageID);
-                }
-
-                const link = args[0] || event.messageReply?.body;
-                if (!link || !link.startsWith("http")) return message.reply(getLang("noLink"));
-
-                const cacheDir = path.join(__dirname, "cache");
-                const filePath = path.join(cacheDir, `alldl_${Date.now()}.mp4`);
-
-                try {
-                        api.setMessageReaction("⏳", event.messageID, () => {}, true);
-                        if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir, { recursive: true });
-
-                        const base = await baseApiUrl();
-                        const apiUrl = `${base}/api/download/video?link=${encodeURIComponent(link)}`;
-                        
-                        const response = await axios({
-                                method: 'get',
-                                url: apiUrl,
-                                responseType: 'arraybuffer',
-                                headers: {
-                                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
-                                }
-                        });
-
-                        fs.writeFileSync(filePath, Buffer.from(response.data));
-
-                        const stats = fs.statSync(filePath);
-                        if (stats.size < 100) throw new Error("Invalid video file received.");
-
-                        api.setMessageReaction("✅", event.messageID, () => {}, true);
-
-                        return message.reply({
-                                body: getLang("success"),
-                                attachment: fs.createReadStream(filePath)
-                        }, () => {
-                                if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-                        });
-
-                } catch (err) {
-                        console.error("AllDL Error:", err);
-                        api.setMessageReaction("❎", event.messageID, () => {}, true);
-                        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-                        return message.reply(getLang("error", err.message));
-                }
+        guide: {
+            en: "[Just send any video link]",
+            bn: "[শুধুমাত্র যেকোনো ভিডিও লিঙ্ক পাঠান]",
+            vi: "[Chỉ cần gửi liên kết video]"
         }
+    },
+
+    langs: {
+        bn: {
+            error: "❌ ভিডিও ডাউনলোড করতে সমস্যা হয়েছে: %1",
+            success: "✅ **আপনার ভিডিও তৈরি!**\n\n• **প্ল্যাটফর্ম:** %1\n• **ডাউনলোডার:** আকাশ"
+        },
+        en: {
+            error: "❌ Failed to download video: %1",
+            success: "✅ **Here is your video!**\n\n• **Platform:** %1\n• **Downloader:** Akash"
+        }
+    },
+
+    onStart: async function () {},
+
+    onChat: async function ({ api, event, getLang }) {
+        if (!event.body) return;
+
+        // বিভিন্ন সোশ্যাল মিডিয়া লিঙ্কের রেগেক্স
+        const urlRegex = /(https?:\/\/(?:www\.|vm\.|vt\.|m\.)?(facebook\.com|fb\.watch|instagram\.com|tiktok\.com|youtu\.be|youtube\.com|x\.com|twitter\.com)\/[^\s]+)/gi;
+        const matches = event.body.match(urlRegex);
+
+        if (!matches || matches.length === 0) return;
+
+        const videoLink = matches[0];
+
+        // প্ল্যাটফর্ম শনাক্তকরণ
+        let platform = "Video";
+        if (/facebook\.com|fb\.watch/i.test(videoLink)) platform = "Facebook";
+        else if (/instagram\.com/i.test(videoLink)) platform = "Instagram";
+        else if (/tiktok\.com/i.test(videoLink)) platform = "TikTok";
+        else if (/youtube\.com|youtu\.be/i.test(videoLink)) platform = "YouTube";
+        else if (/x\.com|twitter\.com/i.test(videoLink)) platform = "X (Twitter)";
+
+        const cacheDir = path.join(__dirname, "cache");
+        const filePath = path.join(cacheDir, `autodl_${Date.now()}.mp4`);
+
+        try {
+            // রিয়েকশন দেওয়া (প্রসেসিং শুরু)
+            api.setMessageReaction("⏳", event.messageID, () => {}, true);
+
+            if (!fs.existsSync(cacheDir)) {
+                fs.mkdirSync(cacheDir, { recursive: true });
+            }
+
+            // ভিডিও ডাউনলোডার API
+            const apiUrl = `https://api.alldownloader.net/api/download?url=${encodeURIComponent(videoLink)}`;
+            
+            // API থেকে ডাটা নেওয়া
+            const response = await axios.get(apiUrl);
+            const downloadUrl = response.data?.data?.url || response.data?.url || response.data?.result;
+
+            if (!downloadUrl) {
+                throw new Error("ভিডিও এর ডাউনলোড লিঙ্ক পাওয়া যায়নি।");
+            }
+
+            // ভিডিও স্টিম/ফাইল ডাউনলোড করা
+            const videoBuffer = await axios({
+                method: "get",
+                url: downloadUrl,
+                responseType: "arraybuffer",
+                headers: {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+                }
+            });
+
+            fs.writeFileSync(filePath, Buffer.from(videoBuffer.data));
+
+            // ফাইল সাইজ চেক করা
+            if (fs.statSync(filePath).size < 1000) {
+                throw new Error("ডাউনলোড হওয়া ফাইলটি সঠিক নয়।");
+            }
+
+            // রিয়েকশন দেওয়া (সফল)
+            api.setMessageReaction("✅", event.messageID, () => {}, true);
+
+            // মেসেজ ও ভিডিও পাঠানো
+            return api.sendMessage({
+                body: getLang("success", platform),
+                attachment: fs.createReadStream(filePath)
+            }, event.threadID, () => {
+                // পাঠানো শেষ হলে ক্যাশ ফাইল ডিলিট করে দেওয়া
+                if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+            }, event.messageID);
+
+        } catch (error) {
+            api.setMessageReaction("❌", event.messageID, () => {}, true);
+            if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+            
+            return api.sendMessage(
+                getLang("error", error.message || "Unknown error"),
+                event.threadID,
+                event.messageID
+            );
+        }
+    }
 };
