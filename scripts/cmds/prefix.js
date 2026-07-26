@@ -110,26 +110,28 @@ module.exports = {
 
 ❐──「 𝗧𝗵𝗮𝗻𝗸𝘀 𝗳𝗼𝗿 𝘂𝘀𝗶𝗻𝗴 𝗺𝗲 ⚡ 」──❐`;
 
-    // ---- 𝗔𝗻𝗶𝗺𝗲 𝗣𝗶𝗰 ----
+    // ---- 𝗙𝗶𝘅𝗲𝗱 𝗔𝗻𝗶𝗺𝗲 𝗘𝘆𝗲 𝗖𝗹𝗶𝗽 ----
+    const fixedMediaUrl = "https://i.imgur.com/OKKnNcT.mp4";
+
     try {
       const cacheDir = path.join(__dirname, "cache");
       await fs.ensureDir(cacheDir);
-      const imgPath = path.join(cacheDir, `prefix_${Date.now()}.jpg`);
+      const mediaPath = path.join(cacheDir, `prefix_${Date.now()}.mp4`);
 
-      const res = await axios.get("https://api.waifu.pics/sfw/waifu");
-      const imageUrl = res.data.url;
-
-      const imgRes = await axios.get(imageUrl, { responseType: "arraybuffer" });
-      fs.writeFileSync(imgPath, Buffer.from(imgRes.data, "binary"));
+      const mediaRes = await axios.get(fixedMediaUrl, {
+        responseType: "arraybuffer",
+        timeout: 10000
+      });
+      fs.writeFileSync(mediaPath, Buffer.from(mediaRes.data, "binary"));
 
       await message.reply({
         body: designMsg,
-        attachment: fs.createReadStream(imgPath)
+        attachment: fs.createReadStream(mediaPath)
       });
 
-      fs.unlinkSync(imgPath);
+      fs.unlinkSync(mediaPath);
     } catch (err) {
-      console.log("Prefix image error:", err.message);
+      console.log("[prefix.js] Media download/send error:", err.code || err.message);
       message.reply(designMsg);
     }
   }
