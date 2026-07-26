@@ -1,11 +1,13 @@
 const fs = require("fs-extra");
 const moment = require("moment-timezone");
+const axios = require("axios");
+const path = require("path");
 
 module.exports = {
   config: {
     name: "prefix",
-    version: "2.4",
-    author: "MAMUN",
+    version: "2.5",
+    author: "Akash Chowdhury",
     countDown: 5,
     role: 0,
     description: "Change & show bot prefix",
@@ -95,15 +97,43 @@ module.exports = {
 
     const owner = global.GoatBot.config.adminName || "AKASH";
 
-    return message.reply(
-`╭━━━〔 PREFIX 〕━━━╮
-┃ 🎀 GROUP : ${groupName}
-┃ ☠️ SYSTEM : 『 ${systemPrefix} 』
-┃ ☯️ GROUP  : 『 ${groupPrefix} 』
-┃ 💠 TIME   : ${time}
-┃ ⚠️ DATE   : ${date}
-┃ Ⓜ️ OWNER  : ${owner}
-╰━━━〔 ✨ ×͜× 〕━━━╯`
-    );
+    // ---- নতুন ডিজাইন ----
+    const designMsg =
+`┌─────❖◆❖─────┐
+   ⌬  P R E F I X  ⌬
+└─────❖◆❖─────┘
+
+🔸 Group   : ${groupName}
+🔸 System  : ${systemPrefix}
+🔸 Group   : ${groupPrefix}
+🔸 Time    : ${time}
+🔸 Date    : ${date}
+🔸 Owner   : ${owner}
+
+┌─────❖◆❖─────┐
+   Thanks for using me ⚡
+└─────❖◆❖─────┘`;
+
+    // ---- এনিমি চোখের ছবি এটাচ করা ----
+    try {
+      const cacheDir = path.join(__dirname, "cache");
+      await fs.ensureDir(cacheDir);
+      const imgPath = path.join(cacheDir, `prefix_${Date.now()}.jpg`);
+
+      const res = await axios.get("https://api.waifu.pics/sfw/eyes");
+      const imageUrl = res.data.url;
+
+      const imgRes = await axios.get(imageUrl, { responseType: "arraybuffer" });
+      fs.writeFileSync(imgPath, Buffer.from(imgRes.data, "binary"));
+
+      await message.reply({
+        body: designMsg,
+        attachment: fs.createReadStream(imgPath)
+      });
+
+      fs.unlinkSync(imgPath);
+    } catch (err) {
+      message.reply(designMsg);
+    }
   }
 };
