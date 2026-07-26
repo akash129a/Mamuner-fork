@@ -6,7 +6,7 @@ const path = require("path");
 module.exports = {
   config: {
     name: "prefix",
-    version: "2.5",
+    version: "2.6",
     author: "Akash Chowdhury",
     countDown: 5,
     role: 0,
@@ -95,32 +95,28 @@ module.exports = {
     const time = moment().tz("Asia/Dhaka").format("hh:mm A");
     const date = moment().tz("Asia/Dhaka").format("DD MMM YYYY");
 
-    const owner = global.GoatBot.config.adminName || "AKASH";
+    const owner = global.GoatBot.config.adminName || "Akash Chowdhury";
 
-    // ---- নতুন ডিজাইন ----
+    // ---- 𝗦𝘁𝘆𝗹𝗶𝘀𝗵 𝗗𝗲𝘀𝗶𝗴𝗻 (Unicode Bold Font) ----
     const designMsg =
-`┌─────❖◆❖─────┐
-   ⌬  P R E F I X  ⌬
-└─────❖◆❖─────┘
+`❐──「 𝗣 𝗥 𝗘 𝗙 𝗜 𝗫 」──❐
 
-🔸 Group   : ${groupName}
-🔸 System  : ${systemPrefix}
-🔸 Group   : ${groupPrefix}
-🔸 Time    : ${time}
-🔸 Date    : ${date}
-🔸 Owner   : ${owner}
+  ➤ 𝗚𝗿𝗼𝘂𝗽   : ${groupName}
+  ➤ 𝗦𝘆𝘀𝘁𝗲𝗺  : 「 ${systemPrefix} 」
+  ➤ 𝗚𝗿𝗼𝘂𝗽𝗣  : 「 ${groupPrefix} 」
+  ➤ 𝗧𝗶𝗺𝗲    : ${time}
+  ➤ 𝗗𝗮𝘁𝗲    : ${date}
+  ➤ 𝗢𝘄𝗻𝗲𝗿   : ${owner}
 
-┌─────❖◆❖─────┐
-   Thanks for using me ⚡
-└─────❖◆❖─────┘`;
+❐──「 𝗧𝗵𝗮𝗻𝗸𝘀 𝗳𝗼𝗿 𝘂𝘀𝗶𝗻𝗴 𝗺𝗲 ⚡ 」──❐`;
 
-    // ---- এনিমি চোখের ছবি এটাচ করা ----
+    // ---- 𝗔𝗻𝗶𝗺𝗲 𝗣𝗶𝗰 ----
     try {
       const cacheDir = path.join(__dirname, "cache");
       await fs.ensureDir(cacheDir);
       const imgPath = path.join(cacheDir, `prefix_${Date.now()}.jpg`);
 
-      const res = await axios.get("https://api.waifu.pics/sfw/eyes");
+      const res = await axios.get("https://api.waifu.pics/sfw/waifu");
       const imageUrl = res.data.url;
 
       const imgRes = await axios.get(imageUrl, { responseType: "arraybuffer" });
@@ -133,6 +129,7 @@ module.exports = {
 
       fs.unlinkSync(imgPath);
     } catch (err) {
+      console.log("Prefix image error:", err.message);
       message.reply(designMsg);
     }
   }
