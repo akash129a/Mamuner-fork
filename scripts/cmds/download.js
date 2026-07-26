@@ -1,22 +1,31 @@
 const axios = require("axios");
-const fs = require("fs-extra");
+const fs = require("fs");
 const path = require("path");
 
-const baseApiUrl = async () => {
-  try {
-    const base = await axios.get(
-      `https://raw.githubusercontent.com/cyber-ullash/cyber-ullash/refs/heads/main/UllashApi.json`
-    );
-    return base.data.api;
-  } catch (err) {
-    return null;
+// ব্যাকআপ এপিআই লিস্ট (প্রথমটা ফেল মারলে পরেরটা কাজ করবে)
+const backupApis = [
+  "https://raw.githubusercontent.com/cyber-ullash/cyber-ullash/refs/heads/main/UllashApi.json",
+  "https://api.dipto.rf.gd/api", // Alternative fallback API
+];
+
+const getWorkingApiUrl = async () => {
+  for (const url of backupApis) {
+    try {
+      const res = await axios.get(url, { timeout: 4000 });
+      if (res.data && res.data.api) return res.data.api;
+      if (typeof res.data === "string" && res.data.startsWith("http")) return res.data;
+    } catch (e) {
+      continue; // প্রথমটা ফেল করলে পরেরটায় যাবে
+    }
   }
+  // কোনো রেজাল্ট না পেলে ডিফল্ট ওয়ার্কিং পাবলিক এপিআই
+  return "https://api.vytal.workers.dev";
 };
 
 module.exports = {
   config: {
     name: "autodl",
-    version: "1.0.2",
+    version: "1.0.3",
     author: "Dipto",
     countDown: 0,
     role: 0,
@@ -33,8 +42,8 @@ module.exports = {
     if (!event.body) return;
     const messageText = event.body.trim();
 
-    // Regex দিয়ে যেকোনো লিংকের ভেতর থেকে ভিডিও লিঙ্ক ম্যাচ করার লজিক
-    const urlRegex = /(https?:\/\/(?:www\.|vt\.|vm\.|fb\.watch\/|m\.|fb\.)?(?:tiktok\.com|facebook\.com|fb\.com|instagram\.com|youtu\.be|youtube\.com|x\.com|twitter\.com)[^\s]+)/i;
+    // অল-ইন-ওয়ান ভিডিও ইউআরএল ডিটেকশন
+    const urlRegex = /(https?:\/\/(?:www\.|vt\.|vm\.|fb\.watch\/|m\.|fb\.)?(?:tiktok\.com|facebook\.com|fb\.com|instagram\.com|youtu\.be|youtube\.com|x\.com|twitter\.com|pin\.it|pinterest\.com)[^\s]+)/i;
     const match = messageText.match(urlRegex);
 
     if (match) {
@@ -43,38 +52,48 @@ module.exports = {
       try {
         api.setMessageReaction("⏳", event.messageID, (err) => {}, true);
 
-        const apiUrl = await baseApiUrl();
-        if (!apiUrl) {
-          throw new Error("API base URL পাওয়া যায়নি!");
-        }
-
-        // Cache ফোল্ডার না থাকলে তৈরি করে নেবে
         const cacheDir = path.join(__dirname, "cache");
         if (!fs.existsSync(cacheDir)) {
           fs.mkdirSync(cacheDir, { recursive: true });
         }
 
-        // ইউনিক ফাইল নেম তৈরি (যাতে ব্যাক-টু-ব্যাক ডাউনলোডে ক্র্যাশ না করে)
         const filePath = path.join(cacheDir, `${Date.now()}_autodl.mp4`);
+        let downloadLink = null;
+        let videoTitle = "Downloaded Video";
 
-        // API থেকে ভিডিওর আসল লিংক আনা
-        const { data } = await axios.get(
-          `${apiUrl}/alldl?url=${encodeURIComponent(videoUrl)}`
-        );
+        // ১. প্রাইমারি API ট্রাই করা
+        const baseUrl = await getWorkingApiUrl();
+        
+        try {
+          const res = await axios.get(`${baseUrl}/alldl?url=${encodeURIComponent(videoUrl)}`, { timeout: 15000 });
+          downloadLink = res.data?.result || res.data?.url || res.data?.video;
+          if (res.data?.cp) videoTitle = res.data.cp;
+        } catch (err) {
+          // ২. ফেইল মারলে ডাইরেক্ট ইমার্জেন্সি অল্টারনেটিভ ডাইনলোডার
+          const fallbackRes = await axios.get(`https://api.cobalt.tools/api/json`, {
+            method: "POST",
+            headers: { "Accept": "application/json", "Content-Type": "application/json" },
+            data: { url: videoUrl }
+          }).catch(() => null);
 
-        const downloadLink = data.result || data.url || data.video;
-        if (!downloadLink) {
-          throw new Error("ভিডিও এর ডাউনলোড লিংক পাওয়া যায়নি।");
+          if (fallbackRes && fallbackRes.data && fallbackRes.data.url) {
+            downloadLink = fallbackRes.data.url;
+          }
         }
 
-        // সঠিকভাবে বাইনারি ভিডিও ডাউনলোড করা (utf-8 ছাড়া)
+        if (!downloadLink) {
+          throw new Error("ভিডিও ডাউনলোডের ফাইল বা লিংক তৈরি করা সম্ভব হয়নি।");
+        }
+
+        // ভিডিও ফাইল স্ট্রিম ডাউনলোড
         const vidResponse = await axios.get(downloadLink, {
           responseType: "arraybuffer",
+          headers: { "User-Agent": "Mozilla/5.0" }
         });
 
         fs.writeFileSync(filePath, Buffer.from(vidResponse.data));
 
-        // URL Shortener সেফটি চেক
+        // Shorten URL (যদি Utility কাজ করে)
         let finalUrl = downloadLink;
         if (global.utils && typeof global.utils.shortenURL === "function") {
           try {
@@ -86,16 +105,16 @@ module.exports = {
 
         api.setMessageReaction("✅", event.messageID, (err) => {}, true);
 
-        // ভিডিও পাঠানো এবং শেষ হলে লোকাল স্টোরেজ থেকে ডিলিট করা
+        // মেসেঞ্জারে ভিডিও পাঠানো
         api.sendMessage(
           {
-            body: `${data.cp || "✅ Download Completed!"}\n\n🔗 Link: ${finalUrl}`,
+            body: `✅ | Download Completed!\n\n📌 Title: ${videoTitle}\n🔗 Link: ${finalUrl}`,
             attachment: fs.createReadStream(filePath),
           },
           event.threadID,
           () => {
             if (fs.existsSync(filePath)) {
-              fs.unlinkSync(filePath);
+              fs.unlinkSync(filePath); // ক্যাশ খালি করা
             }
           },
           event.messageID
@@ -104,7 +123,7 @@ module.exports = {
         api.setMessageReaction("❎", event.messageID, (err) => {}, true);
         console.error("AutoDL Error:", e);
         api.sendMessage(
-          `❌ ডাউনলোড করতে সমস্যা হয়েছে: ${e.message || "Unknown Error"}`,
+          `❌ ডাউনলোড করতে সমস্যা হয়েছে: ${e.message || "Unknown error"}`,
           event.threadID,
           event.messageID
         );
