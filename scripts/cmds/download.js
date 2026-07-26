@@ -5,12 +5,12 @@ const path = require("path");
 module.exports = {
   config: {
     name: "autodl",
-    version: "3.0.0",
-    author: "Dipto / Redesigned",
+    version: "4.0.0",
+    author: "Dipto / Advanced",
     countDown: 0,
     role: 0,
     description: {
-      en: "Auto download video from TikTok, Facebook, Instagram, YouTube, etc.",
+      en: "Auto download video from TikTok, Facebook (Public & Private), Instagram, etc.",
     },
     category: "media",
     guide: {
@@ -22,7 +22,6 @@ module.exports = {
     if (!event.body) return;
     const messageText = event.body.trim();
 
-    // ভিডিও ইউআরএল ডিটেকশন
     const urlRegex = /(https?:\/\/(?:www\.|vt\.|vm\.|fb\.watch\/|m\.|fb\.)?(?:tiktok\.com|facebook\.com|fb\.com|instagram\.com|youtu\.be|youtube\.com|x\.com|twitter\.com|pin\.it|pinterest\.com)[^\s]+)/i;
     const match = messageText.match(urlRegex);
 
@@ -40,40 +39,35 @@ module.exports = {
 
         let downloadLink = null;
 
-        // ১. অটোমেটিক ওয়ার্কিং ডাউনলোডার API
-        const apis = [
-          `https://api.tinag.me/download?url=${encodeURIComponent(videoUrl)}`,
-          `https://auto-download-api.vercel.app/api/download?url=${encodeURIComponent(videoUrl)}`,
-          `https://api.vytal.workers.dev/alldl?url=${encodeURIComponent(videoUrl)}`
-        ];
+        // প্রাইভেট ও পাবলিক ভিডিও প্রসেস করার জন্য স্পেশাল গেটওয়ে এপিআই
+        const primaryApi = `https://getvideo-api.vercel.app/api/download?url=${encodeURIComponent(videoUrl)}`;
+        const backupApi = `https://api.vytal.workers.dev/alldl?url=${encodeURIComponent(videoUrl)}`;
 
-        for (const apiUrl of apis) {
+        try {
+          const res = await axios.get(primaryApi, { timeout: 15000 });
+          downloadLink = res.data?.url || res.data?.hd || res.data?.sd;
+        } catch (e) {
           try {
-            const res = await axios.get(apiUrl, { timeout: 12000 });
-            const data = res.data;
-
-            // ভিন্ন ভিন্ন API এর রেসপন্স ফিল্টারিং
-            downloadLink = data.url || data.result || data.data?.video || data.data?.url || (data.medias && data.medias[0]?.url);
-            
-            if (downloadLink) break; // লিংক পাওয়া গেলে লুপ থামবে
-          } catch (e) {
-            continue; // ব্যর্থ হলে পরবর্তী API চেষ্টা করবে
+            const res2 = await axios.get(backupApi, { timeout: 15000 });
+            downloadLink = res2.data?.result || res2.data?.url;
+          } catch (err) {
+            downloadLink = null;
           }
         }
 
         if (!downloadLink) {
           api.setMessageReaction("❌", event.messageID, () => {}, true);
-          return; // কোনো লিংক না পেলে মেসেজ ছাড়াই নিরবভাবে স্কিপ করবে
+          return;
         }
 
-        // ভিডিও ফাইল ডাউনলোড
+        // স্ট্রিম ডাউনলোড
         const writer = fs.createWriteStream(filePath);
         const videoResponse = await axios({
           url: downloadLink,
           method: "GET",
           responseType: "stream",
           headers: {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
           }
         });
 
@@ -86,7 +80,7 @@ module.exports = {
 
         api.setMessageReaction("✅", event.messageID, () => {}, true);
 
-        // মেসেঞ্জারে ভিডিও পাঠানো (বাড়তি কোনো লেখা ছাড়া)
+        // কোনো টেক্সট ছাড়া শুধুই ভিডিও পাঠানো
         api.sendMessage(
           {
             attachment: fs.createReadStream(filePath),
