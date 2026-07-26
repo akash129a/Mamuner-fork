@@ -5,8 +5,8 @@ const path = require("path");
 module.exports = {
   config: {
     name: "autodl",
-    version: "2.0.0",
-    author: "Dipto / Fixed",
+    version: "3.0.0",
+    author: "Dipto / Redesigned",
     countDown: 0,
     role: 0,
     description: {
@@ -28,85 +28,83 @@ module.exports = {
 
     if (match) {
       const videoUrl = match[0];
+      const cacheDir = path.join(__dirname, "cache");
+      const filePath = path.join(cacheDir, `${Date.now()}_autodl.mp4`);
 
       try {
-        api.setMessageReaction("⏳", event.messageID, (err) => {}, true);
+        api.setMessageReaction("⏳", event.messageID, () => {}, true);
 
-        const cacheDir = path.join(__dirname, "cache");
         if (!fs.existsSync(cacheDir)) {
           fs.mkdirSync(cacheDir, { recursive: true });
         }
 
-        const filePath = path.join(cacheDir, `${Date.now()}_autodl.mp4`);
         let downloadLink = null;
 
-        // ১. প্রাইমারি ডাউনলোডার (Cobalt API - সবচেয়ে ফাস্ট ও নির্ভরযোগ্য)
-        try {
-          const cobaltRes = await axios.post(
-            "https://api.cobalt.tools/api/json",
-            { url: videoUrl },
-            {
-              headers: {
-                "Accept": "application/json",
-                "Content-Type": "application/json",
-                "User-Agent": "Mozilla/5.0"
-              },
-              timeout: 15000
-            }
-          );
+        // ১. অটোমেটিক ওয়ার্কিং ডাউনলোডার API
+        const apis = [
+          `https://api.tinag.me/download?url=${encodeURIComponent(videoUrl)}`,
+          `https://auto-download-api.vercel.app/api/download?url=${encodeURIComponent(videoUrl)}`,
+          `https://api.vytal.workers.dev/alldl?url=${encodeURIComponent(videoUrl)}`
+        ];
 
-          if (cobaltRes.data && cobaltRes.data.url) {
-            downloadLink = cobaltRes.data.url;
-          }
-        } catch (err) {
-          // Cobalt ব্যর্থ হলে ব্যাকআপ API ২
+        for (const apiUrl of apis) {
           try {
-            const backupRes = await axios.get(
-              `https://api.vytal.workers.dev/alldl?url=${encodeURIComponent(videoUrl)}`,
-              { timeout: 15000 }
-            );
-            downloadLink = backupRes.data?.result || backupRes.data?.url;
+            const res = await axios.get(apiUrl, { timeout: 12000 });
+            const data = res.data;
+
+            // ভিন্ন ভিন্ন API এর রেসপন্স ফিল্টারিং
+            downloadLink = data.url || data.result || data.data?.video || data.data?.url || (data.medias && data.medias[0]?.url);
+            
+            if (downloadLink) break; // লিংক পাওয়া গেলে লুপ থামবে
           } catch (e) {
-            downloadLink = null;
+            continue; // ব্যর্থ হলে পরবর্তী API চেষ্টা করবে
           }
         }
 
         if (!downloadLink) {
-          throw new Error("ভিডিও সার্ভার লিংক সরবরাহ করতে পারেনি। লিঙ্কটি পাবলিক কি না যাচাই করুন।");
+          api.setMessageReaction("❌", event.messageID, () => {}, true);
+          return; // কোনো লিংক না পেলে মেসেজ ছাড়াই নিরবভাবে স্কিপ করবে
         }
 
-        // বাইনারি ভিডিও স্ট্রিম হিসেবে ডাউনলোড
-        const vidResponse = await axios.get(downloadLink, {
-          responseType: "arraybuffer",
-          headers: { "User-Agent": "Mozilla/5.0" }
+        // ভিডিও ফাইল ডাউনলোড
+        const writer = fs.createWriteStream(filePath);
+        const videoResponse = await axios({
+          url: downloadLink,
+          method: "GET",
+          responseType: "stream",
+          headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+          }
         });
 
-        fs.writeFileSync(filePath, Buffer.from(vidResponse.data));
+        videoResponse.data.pipe(writer);
 
-        api.setMessageReaction("✅", event.messageID, (err) => {}, true);
+        await new Promise((resolve, reject) => {
+          writer.on("finish", resolve);
+          writer.on("error", reject);
+        });
 
-        // মেসেঞ্জারে ভিডিও পাঠানো
+        api.setMessageReaction("✅", event.messageID, () => {}, true);
+
+        // মেসেঞ্জারে ভিডিও পাঠানো (বাড়তি কোনো লেখা ছাড়া)
         api.sendMessage(
           {
-            body: `✅ | Download Completed!`,
             attachment: fs.createReadStream(filePath),
           },
           event.threadID,
           () => {
             if (fs.existsSync(filePath)) {
-              fs.unlinkSync(filePath); // ফাইল সেন্ড হওয়ার পর ডিলিট
+              fs.unlinkSync(filePath);
             }
           },
           event.messageID
         );
+
       } catch (e) {
-        api.setMessageReaction("❎", event.messageID, (err) => {}, true);
-        console.error("AutoDL Error:", e);
-        api.sendMessage(
-          `❌ ডাউনলোড করতে সমস্যা হয়েছে: ${e.message || "Unknown error"}`,
-          event.threadID,
-          event.messageID
-        );
+        api.setMessageReaction("❌", event.messageID, () => {}, true);
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
       }
     }
   },
