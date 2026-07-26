@@ -5,13 +5,13 @@ const path = require("path");
 module.exports = {
   config: {
     name: "download",
-    version: "1.4",
-    author: "MOHAMMAD AKASH",
+    version: "3.0.0",
+    author: "MOHAMMAD AKASH / Fixed",
     countDown: 5,
     role: 0,
-    shortDescription: "Download media from direct link",
+    shortDescription: "Download video or file from any link",
     category: "media",
-    guide: "{pn} <direct-link>"
+    guide: "{pn} <link>"
   },
 
   onStart: async function ({ api, event, args }) {
@@ -19,61 +19,95 @@ module.exports = {
 
     if (!url) {
       return api.sendMessage(
-        "⚠️ Pʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ᴅɪʀᴇᴄᴛ ᴅᴏᴡɴʟᴏᴀᴅ ʟɪɴᴋ.\n\nE xᴀᴍᴘʟᴇ:\n/download https://example.com/video.mp4",
+        "⚠️ Pʟᴇᴀsᴇ ᴘʀᴏᴠɪᴅᴇ ᴀ ᴠɪᴅᴇᴏ ᴏʀ ғɪʟᴇ ʟɪɴᴋ.\n\nE xᴀᴍᴘʟᴇ:\n/download https://example.com/video.mp4",
         event.threadID,
         event.messageID
       );
     }
 
-    const supported = [
-      ".mp4", ".mp3",
-      ".jpg", ".jpeg", ".png", ".gif",
-      ".pdf", ".docx", ".txt", ".zip"
-    ];
-
-    const ext = path.extname(url.split("?")[0]).toLowerCase();
-
-    if (!supported.includes(ext)) {
-      return api.sendMessage(
-        "❌ Uɴsᴜᴘᴘᴏʀᴛᴇᴅ ғɪʟᴇ ᴛʏᴘᴇ!\n\nSᴜᴘᴘᴏʀᴛᴇᴅ:\nmp4, mp3, jpg, png, gif, pdf, docx, txt, zip",
-        event.threadID,
-        event.messageID
-      );
+    const cacheDir = path.join(__dirname, "cache");
+    if (!fs.existsSync(cacheDir)) {
+      fs.mkdirSync(cacheDir, { recursive: true });
     }
 
-    const fileName = `download${ext}`;
+    const filePath = path.join(cacheDir, `${Date.now()}_download.mp4`);
 
     try {
-      // Loading message (Aʙᴄ Fᴏɴᴛ)
       const loadingMsg = await api.sendMessage(
         "⏳ Dᴏᴡɴʟᴏᴀᴅɪɴɢ • Jᴜsᴛ A Mᴏᴍᴇɴᴛ...",
         event.threadID
       );
 
-      const res = await axios.get(url, {
-        responseType: "arraybuffer",
+      let targetUrl = url;
+      const isSocialMedia = /(facebook|fb|instagram|tiktok|youtu|twitter|x\.com|pin\.it)/i.test(url);
+
+      // সোশ্যাল মিডিয়া লিঙ্ক হলে একাধিক বিকল্প সার্ভার দিয়ে চেষ্টা করবে
+      if (isSocialMedia) {
+        const apis = [
+          `https://auto-download-api.vercel.app/api/download?url=${encodeURIComponent(url)}`,
+          `https://api.vytal.workers.dev/alldl?url=${encodeURIComponent(url)}`,
+          `https://api.tinag.me/download?url=${encodeURIComponent(url)}`
+        ];
+
+        let foundLink = null;
+        for (const apiUrl of apis) {
+          try {
+            const res = await axios.get(apiUrl, { timeout: 12000 });
+            foundLink = res.data?.url || res.data?.result || res.data?.data?.video || res.data?.data?.url;
+            if (foundLink) break;
+          } catch (e) {
+            continue; // একটি এপিআই ফেল করলে পরেরটি চেষ্টা করবে
+          }
+        }
+
+        if (foundLink) {
+          targetUrl = foundLink;
+        }
+      }
+
+      // ফাইল স্ট্রিম মোডে ডাউনলোড
+      const writer = fs.createWriteStream(filePath);
+      const res = await axios({
+        url: targetUrl,
+        method: "GET",
+        responseType: "stream",
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        },
         timeout: 30000
       });
 
-      fs.writeFileSync(fileName, res.data);
+      res.data.pipe(writer);
 
-      // Unsend loading message
+      await new Promise((resolve, reject) => {
+        writer.on("finish", resolve);
+        writer.on("error", reject);
+      });
+
+      // লোডিং মেসেজ আনসেন্ড করা
       api.unsendMessage(loadingMsg.messageID);
 
+      // ভিডিও পাঠানো
       api.sendMessage(
         {
-          body: `✅ Dᴏᴡɴʟᴏᴀᴅ Cᴏᴍᴘʟᴇᴛᴇ!\n📥 Fɪʟᴇ: ${fileName}`,
-          attachment: fs.createReadStream(fileName)
+          body: `✅ Dᴏᴡɴʟᴏᴀᴅ Cᴏᴍᴘʟᴇᴛᴇ!`,
+          attachment: fs.createReadStream(filePath)
         },
         event.threadID,
-        () => fs.unlinkSync(fileName)
+        () => {
+          if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+        },
+        event.messageID
       );
 
     } catch (err) {
       console.error(err);
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+
       api.sendMessage(
-        "❌ Dᴏᴡɴʟᴏᴀᴅ ғᴀɪʟᴇᴅ! Tʜᴇ ʟɪɴᴋ ᴍᴀʏ ɴᴏᴛ ʙᴇ ᴅɪʀᴇᴄᴛ.",
-        event.threadID
+        "❌ Dᴏᴡɴʟᴏᴀᴅ ғᴀɪʟᴇᴅ! Tʜᴇ ʟɪɴᴋ ᴍᴀʏ ʙᴇ ᴘʀɪᴠᴀᴛᴇ ᴏʀ ɪɴᴠᴀʟɪᴅ.",
+        event.threadID,
+        event.messageID
       );
     }
   }
