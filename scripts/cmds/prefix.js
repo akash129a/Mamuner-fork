@@ -111,7 +111,7 @@ module.exports = {
 ❐──「 𝗧𝗵𝗮𝗻𝗸𝘀 𝗳𝗼𝗿 𝘂𝘀𝗶𝗻𝗴 𝗺𝗲 ⚡ 」──❐`;
 
     // ---- 𝗙𝗶𝘅𝗲𝗱 𝗔𝗻𝗶𝗺𝗲 𝗘𝘆𝗲 𝗖𝗹𝗶𝗽 ----
-    const fixedMediaUrl = "https://i.imgur.com/8V9o9eD.mp4";
+    const fixedMediaUrl = "https://i.imgur.com/v7zlfCh.mp4";
 
     // ---- Fallback banner (used only if the video fails to download) ----
     const fallbackImageUrl =
