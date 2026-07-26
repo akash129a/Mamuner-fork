@@ -111,7 +111,11 @@ module.exports = {
 ❐──「 𝗧𝗵𝗮𝗻𝗸𝘀 𝗳𝗼𝗿 𝘂𝘀𝗶𝗻𝗴 𝗺𝗲 ⚡ 」──❐`;
 
     // ---- 𝗙𝗶𝘅𝗲𝗱 𝗔𝗻𝗶𝗺𝗲 𝗘𝘆𝗲 𝗖𝗹𝗶𝗽 ----
-    const fixedMediaUrl = "https://i.imgur.com/OKKnNcT.mp4";
+    const fixedMediaUrl = "https://i.imgur.com/8V9o9eD.mp4";
+
+    // ---- Fallback banner (used only if the video fails to download) ----
+    const fallbackImageUrl =
+      "https://placehold.co/900x300/6a0dad/ffffff.png?text=%E2%9D%90%20PREFIX%20INFO%20%E2%9D%90&font=raleway";
 
     try {
       const cacheDir = path.join(__dirname, "cache");
@@ -120,7 +124,10 @@ module.exports = {
 
       const mediaRes = await axios.get(fixedMediaUrl, {
         responseType: "arraybuffer",
-        timeout: 10000
+        timeout: 10000,
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
+        }
       });
       fs.writeFileSync(mediaPath, Buffer.from(mediaRes.data, "binary"));
 
@@ -131,8 +138,40 @@ module.exports = {
 
       fs.unlinkSync(mediaPath);
     } catch (err) {
+      const statusCode = err.response?.status || err.code || "UNKNOWN";
+
+      const errorBox =
+`╭━━━〔 ❌ DOWNLOAD FAILED 〕━━━╮
+┃ 📌 Error : Request failed with status code ${statusCode}
+┃ 🌍 URL   : ${fixedMediaUrl}
+╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯
+🤖 Powered By RIYAD BOT`;
+
       console.log("[prefix.js] Media download/send error:", err.code || err.message);
-      message.reply(designMsg);
+
+      // Try sending a fallback banner image instead, so the reply never looks empty
+      try {
+        const cacheDir = path.join(__dirname, "cache");
+        await fs.ensureDir(cacheDir);
+        const fallbackPath = path.join(cacheDir, `prefix_fallback_${Date.now()}.png`);
+
+        const fallbackRes = await axios.get(fallbackImageUrl, {
+          responseType: "arraybuffer",
+          timeout: 10000
+        });
+        fs.writeFileSync(fallbackPath, Buffer.from(fallbackRes.data, "binary"));
+
+        await message.reply({
+          body: `${designMsg}\n\n${errorBox}`,
+          attachment: fs.createReadStream(fallbackPath)
+        });
+
+        fs.unlinkSync(fallbackPath);
+      } catch (fallbackErr) {
+        console.log("[prefix.js] Fallback image error:", fallbackErr.code || fallbackErr.message);
+        // Even the fallback image failed — send text only
+        message.reply(`${designMsg}\n\n${errorBox}`);
+      }
     }
   }
 };
