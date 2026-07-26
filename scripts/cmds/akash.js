@@ -1,49 +1,56 @@
- module.exports = {
+module.exports = {
   config: {
     name: "akash",
-    version: "1.0.4",
-    author: "〲Mamunツ࿐ T.T o.O",
+    version: "2.0.0",
+    author: "Akash Chowdhury",
     role: 0,
-    shortDescription: "Akash Profile",
+    shortDescription: {
+      en: "Akash Profile Info"
+    },
     category: "Information",
     guide: {
-      en: "type Akash"
+      en: "Type 'akash' to view profile"
     }
   },
 
   onStart: async function () {},
 
   onChat: async function ({ api, event }) {
-    const msg = event.body?.toLowerCase();
+    const msg = event.body?.toLowerCase()?.trim();
 
     if (!msg || msg !== "akash") return;
 
-    const profileText = `⏤͟͟͞͞♛ Ａｋａｓｈ Ｉｎｆｏ ♛ ☺︎
-⏤͟͟͞͞☺︎ ┏━━━━━━━━━━━━━━━
-⏤͟͟͞͞𝐍𝐚𝐦𝐞 ➯ ᜊＡｋａｓｈ
+    const profileText =
+`╔══════════════════════════╗
+       👑 𝐀𝐊𝐀𝐒𝐇 𝐂𝐇𝐎𝐖𝐃𝐇𝐔𝐑𝐘 👑
+╚══════════════════════════╝
 
-⏤͟͟͞͞𝐍𝐢𝐜𝐤𝐧𝐚𝐦𝐞 ➯ 𝐕𝐎𝐍𝐃𝐎 😜
+╭━━━〔 👤 𝐏𝐄𝐑𝐒𝐎𝐍𝐀𝐋 𝐈𝐍𝐅𝐎 〕━━━╮
+┃
+┣ 📛 𝐍𝐚𝐦𝐞      : Akash Chowdhury
+┣ 😜 𝐍𝐢𝐜𝐤𝐧𝐚𝐦𝐞  : Vondo
+┣ 🎂 𝐀𝐠𝐞       : 20 Years
+┣ 🕌 𝐑𝐞𝐥𝐢𝐠𝐢𝐨𝐧  : Islam
+┣ 🎓 𝐄𝐝𝐮𝐜𝐚𝐭𝐢𝐨𝐧 : Inter 2nd Year
+┃
+╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯
 
-⏤͟͟͞͞𝐂𝐨𝐮𝐧𝐭𝐫𝐲 ➯ 𝐁𝐚𝐧𝐠𝐥𝐚𝐝𝐞𝐬𝐡 🇧🇩
+╭━━━〔 📍 𝐋𝐎𝐂𝐀𝐓𝐈𝐎𝐍 〕━━━━━━━╮
+┃
+┣ 🇧🇩 𝐂𝐨𝐮𝐧𝐭𝐫𝐲  : Bangladesh
+┣ 🏙️ 𝐃𝐢𝐬𝐭𝐫𝐢𝐜𝐭  : Dhaka
+┃
+╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯
 
-🏤⏤͟͟͞͞𝐇𝐨𝐦𝐞 ➯ 𝘿𝙝𝙖𝙠𝙖 ☠️
+╭━━━〔 🖤 𝐏𝐄𝐑𝐒𝐎𝐍𝐀𝐋 𝐋𝐈𝐅𝐄 〕━━━━╮
+┃
+┣ 💍 𝐒𝐭𝐚𝐭𝐮𝐬    : Single
+┣ 🎨 𝐅𝐚𝐯 𝐂𝐨𝐥𝐨𝐫 : Black 🖤
+┣ 👥 𝐁𝐞𝐬𝐭 𝐅𝐫𝐧𝐝  : Ase 🙃
+┃
+╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯
 
-🏛️⏤͟͟͞͞𝐃𝐢𝐬𝐭𝐫𝐢𝐜𝐭 ➯ 💀𝘿𝙝𝙖𝙠𝙖
-
-⛪⏤͟͟͞͞𝐄𝐝𝐮𝐜𝐚𝐭𝐢𝐨𝐧 ➯ 𝐈𝐧𝐭𝐞𝐫 2𝐧𝐝 𝐘𝐞𝐚𝐫 ✍︎❤️‍🩹
-
-⏤͟͟͞͞𝐀𝐠𝐞 ➯ 20 😊❤️‍🩹
-
-🕌⏤͟͟͞͞𝐑𝐞𝐥𝐢𝐠𝐢𝐨𝐧 ➯ 𝐈𝐬𝐥𝐚𝐦 ❤️♡♡
-
-⏤͟͟͞͞𝐑𝐞𝐥𝐚𝐭𝐢𝐨𝐧𝐬𝐡𝐢𝐩 ➯ 𝑺i𝐧𝐠𝐥𝐞 ♡
-
-⏤͟͟͞͞𝐁𝐞𝐬𝐭 𝐅𝐧𝐝 ➯ 𝑨𝑺𝑬 🙃
-
-⏤͟͟͞͞𝐅𝐯𝐭 𝐂𝐨𝐥𝐨𝐮𝐫 ➯ 𝐁𝐥𝐚𝐜𝐤 😺🖤
-
-⏤͟͟͞͞ ☻ 𝗬𝗢𝗨𝗥 𝗕𝗕𝗭
-⏤͟͟͞͞ 𝑂𝑊𝑁𝐸𝑅 ⏤☺︎`;
+ ───────────⚡ 𝐎𝐖𝐍𝐄𝐑 ⚡───────────`;
 
     api.sendMessage(profileText, event.threadID, event.messageID);
   }
