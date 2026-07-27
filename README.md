@@ -1,6 +1,6 @@
-<h1 align="center">
-  <img src="https://readme-typing-svg.herokuapp.com?color=%23F70B10&size=40&center=true&vCenter=true&width=600&height=80&lines=✰+AKASH+✰;POOKIE+CHAT+BOT+OFFICIAL" alt="Akash Banner">
-</h1>
+<p align="center">
+  <img src="https://i.imgur.com/nt92cFV.jpeg" width="100%">
+</p>
 
 <h1 align="center"><img src="./dashboard/images/logo-non-bg.png" width="22px">   ✰𝗣𝗢𝗢𝗞𝗜𝗔☆𝘾𝙃𝘼𝙏☆𝘽𝙊𝙏✰𝗢𝗙𝗙𝗜𝗖𝗜𝗔𝗢✰🌐</h1>
 
