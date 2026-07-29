@@ -1,9 +1,15 @@
 /**
 * @name roast
 * @author Akash Chowdhury
-* @version 2.0.0
-* @description Mention user or execute command to deliver high-level fun Bangladesh style roasts! (500+ roasts)
+* @version 2.1.0
+* @description Mention user or execute command to deliver high-level fun Bangladesh style roasts with audio effect! (500+ roasts)
 */
+
+const fs = require("fs-extra");
+const path = require("path");
+const axios = require("axios");
+
+const LAUGH_AUDIO_URL = "https://upload.wikimedia.org/wikipedia/commons/2/22/Evil_laugh.ogg";
 
 const dialogues = [
     "তোর চেহারার যে অবস্থা, তোকে তো আয়নাও ব্যাক ক্যামেরা দিয়ে দেখে!",
@@ -511,15 +517,15 @@ const dialogues = [
 module.exports = {
     config: {
         name: "roast",
-        version: "2.0.0",
+        version: "2.1.0",
         author: "Akash Chowdhury",
         countDown: 5,
         role: 0,
         shortDescription: {
-            en: "Roast mentioned user or yourself with epic Bangla dialogues (500+ roasts)"
+            en: "Roast mentioned user with funny dialogues and laugh audio (500+ roasts)"
         },
         longDescription: {
-            en: "A hilarious Bangla roast module with 500+ dialogues created for GoatBot by Akash Chowdhury."
+            en: "A hilarious Bangla roast module with 500+ dialogues created for GoatBot by Akash Chowdhury, with laugh audio effect."
         },
         category: "fun",
         guide: {
@@ -528,35 +534,62 @@ module.exports = {
     },
 
     onStart: async function ({ api, event, args }) {
+        const cacheDir = path.join(__dirname, "cache");
+        const cachePath = path.join(cacheDir, `laugh_${event.senderID}.ogg`);
+
+        // Pick roast + target up front so we can use it in both success and fallback paths
+        const randomIndex = Math.floor(Math.random() * dialogues.length);
+        const randomRoast = dialogues[randomIndex];
+
+        let targetName = "";
+        let targetID = event.senderID;
+
+        if (event.mentions && Object.keys(event.mentions).length > 0) {
+            targetID = Object.keys(event.mentions)[0];
+            targetName = event.mentions[targetID].replace("@", "");
+        }
+
+        const responseMessage = targetName
+            ? `🔥 ${targetName}, ${randomRoast}`
+            : `🔥 ${randomRoast}`;
+
         try {
-            // Select a random dialogue from the array
-            const randomIndex = Math.floor(Math.random() * dialogues.length);
-            const randomRoast = dialogues[randomIndex];
+            await fs.ensureDir(cacheDir);
 
-            let targetName = "";
-            let targetID = event.senderID;
+            // Download laugh audio file temporarily
+            const audioResponse = await axios({
+                method: "GET",
+                url: LAUGH_AUDIO_URL,
+                responseType: "stream",
+                timeout: 10000
+            });
 
-            // Check if someone is mentioned
-            if (event.mentions && Object.keys(event.mentions).length > 0) {
-                targetID = Object.keys(event.mentions)[0];
-                targetName = event.mentions[targetID].replace("@", "");
-            }
+            const writer = fs.createWriteStream(cachePath);
+            audioResponse.data.pipe(writer);
 
-            let responseMessage = "";
-            if (targetName) {
-                responseMessage = `🔥 ${targetName}, ${randomRoast}`;
-            } else {
-                responseMessage = `🔥 ${randomRoast}`;
-            }
+            await new Promise((resolve, reject) => {
+                writer.on("finish", resolve);
+                writer.on("error", reject);
+            });
 
+            // Send response message along with audio attachment
+            return api.sendMessage({
+                body: responseMessage,
+                attachment: fs.createReadStream(cachePath),
+                mentions: targetName ? [{ tag: targetName, id: targetID }] : []
+            }, event.threadID, () => {
+                if (fs.existsSync(cachePath)) fs.unlinkSync(cachePath);
+            }, event.messageID);
+
+        } catch (error) {
+            console.error("roast.js audio error:", error.message);
+            if (fs.existsSync(cachePath)) fs.unlinkSync(cachePath);
+
+            // Fallback: send text-only roast if audio fails (bad link, network issue, etc.)
             return api.sendMessage({
                 body: responseMessage,
                 mentions: targetName ? [{ tag: targetName, id: targetID }] : []
             }, event.threadID, event.messageID);
-
-        } catch (error) {
-            console.error(error);
-            return api.sendMessage("কী রে ভাই! রোস্ট মারতে গিয়ে শর্ট সার্কিট হয়ে গেল!", event.threadID, event.messageID);
         }
     }
 };
