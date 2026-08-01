@@ -96,7 +96,7 @@ module.exports = {
 			case "remove":
 			case "-r": {
 				if (!isOwner)
-					return message.reply("❌ ᴏɴʟʏ ᴍᴀɪɴ ᴀᴅᴍɪɴ ʀᴡᴍᴏᴠᴇ ᴏᴘᴇʀᴀᴛᴏʀ .");
+					return message.reply("❌ ᴏɴʟʏ ᴍᴀɪɴ ᴀᴅᴍɪɴ ʀᴇᴍᴏᴠᴇ ᴏᴘᴇʀᴀᴛᴏʀ.");
 
 				let uids = [];
 
@@ -151,23 +151,35 @@ module.exports = {
 					config.adminBot.map(uid => usersData.getName(uid).then(name => ({ uid, name })))
 				);
 
-				const ownerBox =
-` ᴍᴀɪɴ ᴀᴅᴍɪɴ 
- 
-𝗔𝗞𝗔𝗦𝗛 𝗖𝗛𝗢𝗪𝗗𝗛𝗨𝗥𝗬
+				// 🎨 নতুন ডিজাইন - অনেক সুন্দর এবং পেশাদার
+				const adminListDisplay = `
+╔════════════════════════════════════════╗
+║         👑 ADMIN & OPERATOR LIST 👑    ║
+╚════════════════════════════════════════╝
 
-ᴏᴡɴᴇʀ ᴜɪᴅ ☺︎︎ 
-  ♡︎ ${OWNER.join(", ")}
-61589020949344 `;
+┌─ 🔐 MAIN OWNER
+│
+├─ Name: 𝗔𝗞𝗔𝗦𝗛 𝗖𝗛𝗢𝗪𝗗𝗛𝗨𝗥𝗬
+├─ UID: ${OWNER.join(", ")}
+├─ Status: ⭐ OWNER ⭐
+└─ Role: FULL ACCESS
 
-				const operatorsBox =
-`𝑨𝑫𝑴𝑰𝑵 𝑳𝑰𝑺𝑻  ⚠︎ 
+${getNames.length > 0 ? `┌─ ⚙️  OPERATORS (${getNames.length})` : "┌─ ⚙️  OPERATORS"}
+│
+${getNames.length > 0 
+	? getNames.map((user, index) => {
+		const isLast = index === getNames.length - 1;
+		const prefix = isLast ? "└─" : "├─";
+		const connector = isLast ? "  " : "│ ";
+		return `${prefix} 👤 ${user.name}\n${connector}   UID: ${user.uid}`;
+	}).join("\n│ \n")
+	: `└─ 📭 No Operators Found`}
 
-${getNames.length > 0
-	? getNames.map(i => `☠︎︎ ✔︎ ${i.name} (${i.uid})`).join("\n")
-	: "│ No Operators Found"}`;
+╔════════════════════════════════════════╗
+║  Total Admins: ${getNames.length + 1}
+╚════════════════════════════════════════╝`;
 
-				return message.reply(ownerBox + "\n\n" + operatorsBox);
+				return message.reply(adminListDisplay);
 			}
 
 			default:
