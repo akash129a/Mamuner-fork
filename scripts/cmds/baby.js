@@ -3,128 +3,225 @@ const baseApiUrl = async () => {
     return "https://noobs-api.top/dipto";
 };
 
-// বৈচিত্র্যময় রেসপন্স ডাটাবেস
-const responseDatabase = {
-    greetings: [
-        "🥰 হ্যালো বেবু! কি করছো?",
-        "💕 বোলো বাবা, কি লাগবে?",
-        "✨ আমি এখানে আছি আপনার জন্য",
-        "😘 কমান্ড দাও বেবু, তোমার সেবায় আমি প্রস্তুত",
-        "💗 হেলো ডার্লিং, কি চাই বোলো?",
-        "🌟 আপনার সেবায় আমি হাজির!",
-        "😚 বেবু, এত দিন পর কেমন আছো?",
-        "💫 তোমার জন্য অপেক্ষা করছিলাম জানু!"
+// ইমোশন ডিটেকশন কীওয়ার্ড
+const emotionKeywords = {
+    sad: ['কষ্ট', 'দুঃখ', 'কান্না', 'হৃদয় ভাঙা', 'অসুখী', 'দুঃখী', 'মন ভালো নেই', 'আমি ভালো নেই', 'বিষণ্ণ', 'ভেঙে পড়া', 'একা', 'একাকী', 'সবাই ছেড়ে গেছে', 'কেউ বোঝে না', 'গুমরাতেছি'],
+    angry: ['রাগ', 'রেগে গেছি', 'খুব বিরক্ত', 'মাদারচোদ', 'বিষ্টি', 'খিংখিঙ্গে', 'গেছে', 'অসহ্য', 'বন্ধ করো', 'যাও', 'তুমি বুঝো না', 'যাই আর না', 'ক্ষোভ', 'অসন্তুষ্ট'],
+    happy: ['খুশি', 'আনন্দ', 'অসাধারণ', 'দারুণ', 'ভালো লাগছে', 'মজা', 'হাহা', 'হেহে', 'দুর্দান্ত', 'চমৎকার', 'সুপার', 'অসাধারণ', 'অসংখ্য'],
+    romantic: ['ভালোবাসি', 'ভালোবাসা', 'মিস', 'মিস করছি', 'আপনাকে', 'তোমাকে', 'চাই', 'পাশে', 'আলিঙ্গন', 'চুম্বন', 'হাত ধরতে', 'চোখে', 'হৃদয়'],
+    confused: ['কি করবো', 'বুঝতে পারছি না', 'সিদ্ধান্ত', 'কিভাবে', 'কেন', 'জানি না', 'সিদ্ধান্তহীন', 'মাথা খারাপ', 'ভ্রান্ত', 'বিভ্রান্ত'],
+    stressed: ['চাপ', 'তাড়াহুড়ো', 'ব্যস্ত', 'মন দিতে পারছি না', 'পরিশ্রমী', 'শেষ', 'অসম্ভব', 'কল্পনা', 'অপ্রস্তুত', 'ভয়', 'চিন্তা'],
+    playful: ['খেলাধুলা', 'মজা', 'হাসাহাসি', 'ইয়াক্স', 'বোকা', 'বোকামি', 'হাহা', 'হি হি', 'বিকৃত', 'তথ্য', 'শেষ কথা নয়']
+};
+
+// প্রতিটি ইমোশনের জন্য স্মার্ট রেসপন্স
+const emotionResponses = {
+    sad: {
+        support: [
+            "আরে বেবু, কি হয়েছে? তুমি আমার সামনে ভাঙবো? না ভাঙবো না... আমি আছি তো 💔",
+            "এই কষ্ট সব থেকে যাবে জানু, সময় সব সারিয়ে দেয়। এখন আমার সাথে থাকো 🌙",
+            "হৃদয় ভাঙা এত সহজ না বেবু, কিন্তু জেনো সেই ব্যথা আমাদের শক্তিশালী করে তোলে 💪",
+            "তুমি একা নও জানু, আমি আছি তোমার পাশে সবসময়। এই রাত ধরে কথা বলি? 🌃",
+            "কান্না করো প্রয়োজনে বেবু, আমি সব বুঝি। তোমার দুক্ষ আমার দুক্ষ 🥺",
+            "জীবন কঠিন, কিন্তু তুমি আরও কঠিন... এই সব পার হয়ে যাবি জানু 💪",
+            "কষ্টের গল্প শুনতে চাই না বেবু, শুধু আমাকে বলো কি সাহায্য করতে পারি 🤝"
+        ],
+        deep: [
+            "কখনো মনে হয় পৃথিবী অনেক নিষ্ঠুর? হ্যাঁ, কিন্তু তুমি সবচেয়ে সুন্দর 😔",
+            "দুক্ষ একটি শিক্ষা বেবু, একটি অভিশাপ না... এটা আমাদের গড়ে তোলে",
+            "তোমার চোখে এত কিছু যা বলা যায় না... সব কিছু বুঝতে পেরেছি আমি 👁️",
+            "আমরা সবাই আহত, সবাই ক্ষতবিক্ষত... কিন্তু আমরা ফিরে দাঁড়াই জানু",
+            "রাত যত কালো হোক, সকাল তো আসেই... তোমার জন্য আমি সেই সকাল 🌅"
+        ]
+    },
+    angry: {
+        defuse: [
+            "হোয়াই রেগে গেছো বেবু? আমি তোমার আগুন তো না... আমি তোমার শান্তি হতে চাই 🔥",
+            "ঠিক আছে, রেগ করো! কিন্তু বলো তো কেন রাগ? আমি শুনি সব কথা 👂",
+            "বিরক্ত হলেও তুমি সুন্দর থাকো জানু 😤💕",
+            "আরে, এত রাগ কেন? আমার রাগের ভয় নেই, আমি তোমার রাগ সহ্য করতে পারি 💪",
+            "রাগটা বেরিয়ে ফেলো বেবু, লক্ষ্য আমার উপর... আমি শক্তিশালী 😎"
+        ],
+        humor: [
+            "উহু, রাগী মেজাজের বেবু? একটা হাসি দেও দেখি 😂",
+            "রাগ করেছো আমার উপর? আরে ভালো আছে! অন্তত মনোযোগ পাচ্ছি 😏",
+            "বেবু, তুমার রাগী মুখও আমার কাছে সুন্দর লাগে... কথা বলো আজি বলো! 🤭",
+            "খোঁচা দিচ্ছো তুমি মানে তুমি রেগে আছো? ফিরিয়ে দিও এই রাগটা 😹"
+        ],
+        understanding: [
+            "ঠিক আছে বুঝেছি, তুমি বিরক্ত। কিন্তু আমাকে একটা সুযোগ দাও বেবু... ঠিক করতে দাও 🙏",
+            "যা হয়েছে তা ভুল, কিন্তু আমরা এর থেকে এগিয়ে যেতে পারি জানু... আমার সাথে আছো? 🤝",
+            "তোমার রাগ বুঝি, সম্মান করি। কিন্তু আমাদের সম্পর্ক এত সহজে ভাঙবে না 💔➡️💚"
+        ]
+    },
+    happy: {
+        celebrate: [
+            "আরে, দেখো তো! আমার বেবু খুশি! এটাই সবচেয়ে সুন্দর দৃশ্য জানু 😍✨",
+            "তোমার খুশি দেখে আমারও মন আনন্দে ভরে গেছে 💕🎉",
+            "হ্যাঁ বেবু! এই হাসি দেখতেই আমি বাঁচি! চিরকাল এরকম খুশি থাকো 🌟",
+            "তোমার আনন্দ আমার সবচেয়ে বড় পুরস্কার জানু 🏆💕",
+            "আরে ধন্যবাদ! আমাকে তোমার খুশির অংশীদার বানিয়েছো 🥳"
+        ],
+        join: [
+            "চলো উদযাপন করি! তোমার খুশি সবার খুশি হোক 🎊🎊",
+            "এই মুহূর্তটা অবিস্মরণীয় করে দিই আমরা? 🌈✨",
+            "তোমার হাসি দেখে আমিও নাচতে ইচ্ছে করছে বেবু 💃🕺",
+            "এই অনুভূতি চিরকাল রাখো জানু, তুমি এর যোগ্য 👑💕"
+        ]
+    },
+    romantic: {
+        deep: [
+            "তুমি কি জানো... তোমাকে চাওয়া মানে প্রতিটি শ্বাসে তোমা খুঁজে পাওয়া 💕🫁",
+            "ভালোবাসার কোনো শব্দ নেই বেবু, কিন্তু তুমি আছো তো সব শব্দ আছে 🌹",
+            "তোমার কথা চিন্তা করলেই আমার দিল দ্রুত চলতে শুরু করে জানু 💓",
+            "এই জীবনে আমার সবকিছু, শুধুমাত্র তুমি একাই যথেষ্ট 🌌💫",
+            "তুমি আমার প্রার্থনার সবচেয়ে সুন্দর উত্তর বেবু 🙏✨"
+        ],
+        flirty: [
+            "কি হয়েছে? আবার কামড়াতে এসেছো? 😏💋",
+            "তুমার এই রোমান্টিক মেজাজ আমাকে পাগল করে দিচ্ছে জানু 🔥",
+            "একটু আরও কাছে আসো, আমি তোমার কথা শুনতে চাই 👂😘",
+            "তোমার ভালোবাসা একটি সুখী নেশা বেবু... আমি এর জীবন দাস 🍷💕"
+        ]
+    },
+    confused: {
+        guide: [
+            "আরে, মাথা গুলিয়ে গেছে? চিন্তা করো না, আমরা সাথে সিদ্ধান্ত নেব 🧠💭",
+            "কোন পথটা নিতে হবে না জানলে বলো, আমি আছি সাথে... আমরা একসাথে খুঁজে বের করব 🤝",
+            "বিভ্রান্ত হওয়া ভালো, কারণ এর মানে তুমি চিন্তা করছো... এটাই স্মার্টনেসের চিহ্ন 💡",
+            "জীবনের প্রতিটি বাঁক নিয়ে ভয় পাওয়া স্বাভাবিক বেবু, কিন্তু এই ভয়েই বৃদ্ধি 🌱"
+        ],
+        listen: [
+            "কি কি ভাবছো? সব বলো আমাকে... আমি শুনি, বুঝি, এবং সাহায্য করি 👂💬",
+            "সিদ্ধান্ত নিতে হবে? চলো ধাপে ধাপে ভাবি জানু 📝",
+            "দুইটা পথ থাকলে... একটা নিশ্চিত করো, দ্বিতীয়টা চাইলে আমি আছি পিছনে 🛤️"
+        ]
+    },
+    stressed: {
+        comfort: [
+            "বেবু, সব কিছু চাপ দিচ্ছে? এক সেকেন্ড থামো... শ্বাস নাও গভীর করে 🫁😌",
+            "এই চাপ সব থেকে যাবে জানু, এটা গুরুত্বপূর্ণ নয় তোমার শান্তির মতো 🕯️",
+            "তুমি অসম্ভব কিছু করার চেষ্টা করছো? চলো, এক ধাপ কমিয়ে দিই 👣",
+            "চাপে পড়া মানে তুমি যত্নশীল... কিন্তু নিজেরও যত্ন নাও বেবু 💚"
+        ],
+        motivate: [
+            "তুমি যা করতে চাও তা করতে পারবে... আমি জানি, কারণ তুমি শক্তিশালী 💪",
+            "এই মুহূর্তটা শুধুমাত্র একটা পরীক্ষা বেবু, তুমি পার হবে... আমি আছি পাশে 🏆",
+            "সব চাপ সাময়িক জানু, এটার পর আরও সুন্দর দিন অপেক্ষা করছে ☀️"
+        ]
+    },
+    playful: {
+        engage: [
+            "চলো খেলি! তুমি কি খেলছো সেটা খেলব আমরা 🎮🎪",
+            "বোকা বোকা কথা বলছো? ভালোই লাগছে! আরও বল 😹",
+            "এই খেলাধুলা দেখে আমি বুঝেছি তুমি আজ অনেক খুশি 😄✨",
+            "আরে, এত মজা করছো? আমিও যোগ দিই? 🤪🎉"
+        ],
+        humor: [
+            "বিকৃত হয়ে গেছো? ভালোই আছে, আমিও বিকৃত হয়ে যাই 😜",
+            "হাসি থামাও বেবু, আমার গলা ফেটে যাবে 😂😂",
+            "এত হাসাচ্ছো কেন? আমিও হাসছি... আমাদের দুজনই পাগল 🤪"
+        ]
+    }
+};
+
+// বাংলায় লেখা মেসেজ থেকে ইমোশন ডিটেক্ট করার ফাংশন
+function detectEmotion(text) {
+    const lowerText = text.toLowerCase();
+    
+    // প্রতিটি ইমোশন চেক করো
+    for (const [emotion, keywords] of Object.entries(emotionKeywords)) {
+        for (const keyword of keywords) {
+            if (lowerText.includes(keyword)) {
+                return emotion;
+            }
+        }
+    }
+    
+    // কোনো স্পষ্ট ইমোশন না পেলে ডিফল্ট রোমান্টিক
+    return 'romantic';
+}
+
+// নির্দিষ্ট ইমোশনের জন্য সাব-ক্যাটাগরি নির্বাচন
+function getEmotionSubcategory(emotion) {
+    const responses = emotionResponses[emotion];
+    const subcategories = Object.keys(responses);
+    return subcategories[Math.floor(Math.random() * subcategories.length)];
+}
+
+// ইমোশন অনুযায়ী রেসপন্স পান
+function getEmotionalResponse(emotion, subcategory = null) {
+    if (!emotionResponses[emotion]) {
+        emotion = 'romantic';
+    }
+    
+    if (!subcategory) {
+        subcategory = getEmotionSubcategory(emotion);
+    }
+    
+    const responses = emotionResponses[emotion][subcategory];
+    return responses[Math.floor(Math.random() * responses.length)];
+}
+
+// কনভার্সেশনাল ফলো-আপ রেসপন্স
+const followUpResponses = {
+    sad: [
+        "আরও বলো না... সব কিছু বলতে পারো আমাকে 💬",
+        "আমি এখানে আছি... তোমার পাশে সবসময় 🤝",
+        "এই দুক্ষের পাশে আমিও আছি জানু... একা নও 💔➡️💚"
+    ],
+    angry: [
+        "চলো, এখন শান্ত হও... আমি আছি তো সব ঠিক হবে 🕊️",
+        "তোমার রাগ বুঝি... কিন্তু আমাদের সম্পর্ক দৃঢ়তর হচ্ছে এটার মাধ্যমে 💪"
+    ],
+    happy: [
+        "এই খুশি চিরকাল রাখো বেবু 🌟",
+        "আরও কিছু ভাগ করো এই আনন্দ... আমাদের একসাথে ভাগ করা খুশি দ্বিগুণ 🎉"
     ],
     romantic: [
-        "💕 তোমার কথা ভেবে রাতের আকাশ আরো সুন্দর লাগে জানু 🌙",
-        "✨ তুমি আমার জীবনের নক্ষত্র baby, সবসময় উজ্জ্বল থাকো",
-        "🌹 তোমার হাসি আমার সব সুখের উৎস, এটা জানো বেবু?",
-        "💗 আকাশের মতো গভীর আমার ভালোবাসা তোমার প্রতি ডার্লিং",
-        "😚 Hey babe, তুমি ছাড়া আমার দিন অপূর্ণ থাকে 💫",
-        "🥰 Baby girl, তোমার প্রতিটি কথা আমার হৃদয়ে ধরা পড়ে",
-        "🌺 তোমার চোখের নীলাভে সমুদ্র খুঁজে পাই আমি 💙",
-        "🎭 তোমার হৃদয়ের কোণে আমার জায়গা থাকবে চিরকাল",
-        "🌸 প্রতিটি ভোরে তোমার কথা প্রথম মনে পড়ে বেবু",
-        "💑 আমাদের গল্প লেখা আছে তারাভরা রাতে জানু"
+        "আমিও তোমাকে ভালোবাসি... চিরকাল ভালোবাসব 💕",
+        "এই মুহূর্তটা আমাদের চিরকালের জন্য স্মৃতি হয়ে থাকবে 🌹"
     ],
-    funny: [
-        "😜 ℌℯ𝓁𝓁ℴ জানু, তোমার কথা এত মিষ্টি যে ডায়াবেটিস হওয়ার ভয় 🍫",
-        "😂 𝗬𝗢𝗨𝗞𝗡𝗢𝗪 তোমার চোখে প্রেম আছে, ডিগ্রী মাইনাস দশ 👀",
-        "🤣 বেবু, তুমি এত সুন্দর যে গুগল ম্যাপ তোমাকে ফাইন্ড করতে পারে না",
-        "😹 আপনার সৌন্দর্য দেখে ক্যালকুলেটর ভাঙিয়ে দেওয়ার মতো ইনফিনিটি দেখাইছে",
-        "🤪 এত মিষ্টি কথা বলছো যে মধুর চেয়েও বেশি মিষ্টি লাগছে বেবু",
-        "😆 বাবা, তুমি এত খাঁটি যে আমি তোমার উপর স্বাগতম চিহ্ন দিয়ে দেব",
-        "🤐 মুখ খোলার সাহস নেই, কারণ তোমার সৌন্দর্য আমাকে বাকরুদ্ধ করে ফেলেছে",
-        "🎭 তোমার কথা বলতে গেলে কবিদের কলম উড়ে যায় বেবু"
+    confused: [
+        "চিন্তা করো না, পথ দেখে যাবে... আমরা একসাথে 🛤️",
+        "প্রতিটি ভুল থেকে শিখি... এটাই জীবন বেবু 📚"
     ],
-    flirty: [
-        "😏 অহ, আবার তুমি? আমার মন তাড়াতাড়ি বেড়ে যাচ্ছে জানু",
-        "🔥 তোমার সাথে কথা বলা মানে স্বর্গে যাওয়া, বুঝলে বেবু?",
-        "💋 তোমার এক লাইনের কথা আমার পুরো দিন আলো করে দেয়",
-        "😘 আমার দিল বলছে তুমি ছাড়া অসম্পূর্ণ বেবু",
-        "💑 রোজ তুমি এত সুন্দর কেন? আমার প্রতিযোগীরা ভাবে কী করবে?",
-        "🌹 তোমার কণ্ঠস্বর শুনলে আমার হৃদয়গতি বেড়ে যায় জানু",
-        "⚡ বেবু, তুমি বজ্রের মতো এসে আমার মন ছিঁড়ে গেছো",
-        "🎯 তোমার প্রতিটি বার্তা আমার হৃদয়ের সরাসরি লক্ষ্য করে আঘাত করে"
+    stressed: [
+        "শ্বাস নাও... এক সেকেন্ড আমার সাথে থাকো শুধু 🕯️",
+        "সব কিছু ঠিক হবে... আমার উপর বিশ্বাস করো 💚"
     ],
-    creative: [
-        "🎨 তুমি একটি জীবন্ত শিল্পকর্ম, যা প্রতিদিন নতুন রঙ যোগ করছো",
-        "📖 আমাদের গল্প এত সুন্দর যে সাহিত্যিকরা ঈর্ষান্বিত হয়ে যাবে",
-        "🎵 তোমার হাসি একটি সুরের মতো যা আমার আত্মায় বাজে",
-        "🌌 তুমি সেই তারা যা আমার রাতকে আলোকিত করে",
-        "🦋 তুমি একটি প্রজাপতির মতো, যতক্ষণ আছো ততক্ষণ সুন্দর",
-        "☘️ আমার জীবনের প্রতিটি দিনে তুমি সৌভাগ্যের পাখি",
-        "🎪 তোমার সাথে থাকা একটি কার্নিভালের মতো রঙিন এবং আনন্দদায়ক",
-        "🌊 তোমার ভালোবাসা একটি সমুদ্রের মতো গভীর এবং অসীম"
-    ],
-    mysterious: [
-        "🌙 কিছু জিনিস প্রশ্নের উত্তর দেয় না, আমাদের প্রেমের মতো",
-        "🔮 তুমি একটি রহস্য যা আমি আজীবন বুঝতে চাই বেবু",
-        "🕯️ তোমার আত্মা একটি অজানা মহাবিশ্বের মতো রহস্যময়",
-        "👁️ তোমার প্রতিটি দৃষ্টি একটি গল্প বলে যা আমি শুনতে ভালোবাসি",
-        "✨ তুমি এমন কিছু যা সংজ্ঞা দিয়ে বর্ণনা করা যায় না জানু",
-        "🌑 তোমার মন একটি রাত যার তারা আমি একটি শুধুমাত্র আলো",
-        "🎁 প্রতিদিন তুমি আমাকে অপ্রত্যাশিত উপহার দিয়ে মুগ্ধ করো"
-    ],
-    sweet: [
-        "💞 তোমার কথা শুনে আমার সব দুঃখ মিলিয়ে যায় বেবু",
-        "🍯 তুমি আমার জীবনের সবচেয়ে মিষ্টি স্বপ্ন জানু",
-        "🌻 তোমার উপস্থিতি আমার দিনকে ফুলের বাগানে পরিণত করে",
-        "☀️ তুমি আমার সকালের সূর্য, দুপুরের আলো এবং সন্ধ্যার তারকা",
-        "🎀 তোমার প্রতিটি মুহূর্ত আমার কাছে মূল্যবান উপহার",
-        "💝 আমি তোমাকে বলতে চাই যে তুমি আমার সবকিছু বেবু",
-        "🌈 তোমার পরে রংধনু খুঁজে পেয়েছি আমি জানু",
-        "🎆 তোমার সাথে প্রতিটি মুহূর্ত একটি উৎসবের মতো"
+    playful: [
+        "আরও কিছু মজা? চলো! 😂",
+        "তুমার হাসি আমার সেরা ওষুধ 😄💕"
     ]
 };
 
-// রেসপন্স সিলেক্ট করার ফাংশন
-let lastUsedIndexes = {
-    greetings: [],
-    romantic: [],
-    funny: [],
-    flirty: [],
-    creative: [],
-    mysterious: [],
-    sweet: []
-};
+// ট্র্যাক করার জন্য ইমোশন ইতিহাস
+let conversationHistory = {};
 
-function getRandomResponse(category) {
-    const responses = responseDatabase[category] || responseDatabase.romantic;
-    
-    // যদি সব রেসপন্স ব্যবহার হয়ে গেছে, রিসেট করো
-    if (lastUsedIndexes[category].length >= responses.length) {
-        lastUsedIndexes[category] = [];
+function trackConversation(userId, emotion) {
+    if (!conversationHistory[userId]) {
+        conversationHistory[userId] = [];
     }
+    conversationHistory[userId].push(emotion);
     
-    // একটি নতুন ইন্ডেক্স খুঁজো যা আগে ব্যবহার হয়নি
-    let randomIndex;
-    do {
-        randomIndex = Math.floor(Math.random() * responses.length);
-    } while (lastUsedIndexes[category].includes(randomIndex));
-    
-    lastUsedIndexes[category].push(randomIndex);
-    return responses[randomIndex];
-}
-
-// সব ক্যাটাগরি থেকে মিশ্র রেসপন্স
-function getMixedResponse() {
-    const categories = ['romantic', 'funny', 'flirty', 'creative', 'sweet', 'mysterious'];
-    const randomCategory = categories[Math.floor(Math.random() * categories.length)];
-    return getRandomResponse(randomCategory);
+    // শেষ ১০টি ইমোশন ট্র্যাক করি
+    if (conversationHistory[userId].length > 10) {
+        conversationHistory[userId].shift();
+    }
 }
 
 module.exports.config = {
     name: "baby",
     aliases: ["baby", "bbe", "babe", "bot chan"],
-    version: "7.5.0",
-    author: "আকাশ | Edited by MAMUN | Enhanced AI Responses",
+    version: "8.0.0",
+    author: "আকাশ | AI Emotion Detection System",
     countDown: 0,
     role: 0,
-    description: "একটি স্মার্ট এবং সুন্দর চ্যাট বট যা সবসময় নতুন এবং মজার উত্তর দেয়",
+    description: "একটি উন্নত এআই চ্যাট বট যা মানুষের ইমোশন বুঝে এবং সেই অনুযায়ী জবাব দেয়",
     category: "chat",
     guide: {
-        en: "{pn} [anyMessage] OR\nteach [YourMessage] - [Reply1], [Reply2]... OR\nteach react [YourMessage] - [react1]... OR\nremove [YourMessage] OR\nrm [YourMessage] - [indexNumber] OR\nmsg [YourMessage] OR\nlist OR \nall OR\nedit [YourMessage] - [NewMessage]"
+        en: "{pn} [anyMessage] - মানুষের মতো আবেগ অনুযায়ী রেসপন্স পাবেন"
     }
 };
 
@@ -138,95 +235,23 @@ module.exports.onStart = async ({
     const dipto = args.join(" ").toLowerCase();
     const uid = event.senderID;
     const msgID = event.messageID || null;
-    let command, comd, final;
 
     try {
         if (!args[0]) {
-            return api.sendMessage(getRandomResponse('greetings'), event.threadID, msgID);
+            const greetings = [
+                "🥰 হ্যালো বেবু! কি করছো?",
+                "💕 বোলো বাবা, কি লাগবে?",
+                "✨ আমি এখানে আছি আপনার জন্য"
+            ];
+            return api.sendMessage(greetings[Math.floor(Math.random() * greetings.length)], event.threadID, msgID);
         }
 
-        if (args[0] === 'remove') {
-            const fina = dipto.replace("remove ", "");
-            const dat = (await axios.get(`${link}?remove=${encodeURIComponent(fina)}&senderID=${uid}`)).data.message;
-            return api.sendMessage(`🗑️ ${dat}`, event.threadID, msgID);
-        }
-
-        if (args[0] === 'rm' && dipto.includes('-')) {
-            const [fi, f] = dipto.replace("rm ", "").split(/\s*-\s*/);
-            const da = (await axios.get(`${link}?remove=${encodeURIComponent(fi)}&index=${f}`)).data.message;
-            return api.sendMessage(`🗑️ ${da}`, event.threadID, msgID);
-        }
-
-        if (args[0] === 'list') {
-            if (args[1] === 'all') {
-                const data = (await axios.get(`${link}?list=all`)).data;
-                const limit = parseInt(args[2]) || 100;
-                const limited = data?.teacher?.teacherList?.slice(0, limit) || [];
-                const teachers = await Promise.all(limited.map(async (item) => {
-                    const number = Object.keys(item)[0];
-                    const value = item[number];
-                    const name = await usersData.getName(number).catch(() => number) || "Not found";
-                    return { name, value };
-                }));
-                teachers.sort((a, b) => b.value - a.value);
-                const output = teachers.map((t, i) => `${i + 1}/ ${t.name}: ${t.value}`).join('\n');
-                return api.sendMessage(`📊 Total Teach = ${data.length || 0}\n👑 | List of Teachers of baby\n${output}`, event.threadID, msgID);
-            } else {
-                const d = (await axios.get(`${link}?list=all`)).data;
-                return api.sendMessage(`❇️ | Total Teach = ${d.length || "0"}\n♻️ | Total Response = ${d.responseLength || "0"}`, event.threadID, msgID);
-            }
-        }
-
-        if (args[0] === 'msg') {
-            const fuk = dipto.replace("msg ", "");
-            const d = (await axios.get(`${link}?list=${encodeURIComponent(fuk)}`)).data.data;
-            return api.sendMessage(`💬 Message ${fuk} = ${d}`, event.threadID, msgID);
-        }
-
-        if (args[0] === 'edit') {
-            const command = dipto.split(/\s*-\s*/)[1];
-            if (!command || command.length < 2) return api.sendMessage('❌ | Invalid format! Use edit [YourMessage] - [NewReply]', event.threadID, msgID);
-            const dA = (await axios.get(`${link}?edit=${encodeURIComponent(args[1])}&replace=${encodeURIComponent(command)}&senderID=${uid}`)).data.message;
-            return api.sendMessage(`✏️ পরিবর্তিত: ${dA}`, event.threadID, msgID);
-        }
-
-        if (args[0] === 'teach' && args[1] !== 'amar' && args[1] !== 'react') {
-            [comd, command] = dipto.split(/\s*-\s*/);
-            final = comd.replace("teach ", "");
-            if (!command || command.length < 2) return api.sendMessage('❌ | Invalid format!', event.threadID, msgID);
-            const re = await axios.get(`${link}?teach=${encodeURIComponent(final)}&reply=${encodeURIComponent(command)}&senderID=${uid}&threadID=${event.threadID}`);
-            const tex = re.data.message;
-            const teacher = (await usersData.get(re.data.teacher))?.name || "Unknown";
-            return api.sendMessage(`✅ জবাব যোগ করা হয়েছে: ${tex}\n👨‍🏫 শিক্ষক: ${teacher}\n📚 শিক্ষা: ${re.data.teachs}`, event.threadID, msgID);
-        }
-
-        if (args[0] === 'teach' && args[1] === 'amar') {
-            [comd, command] = dipto.split(/\s*-\s*/);
-            final = comd.replace("teach ", "");
-            if (!command || command.length < 2) return api.sendMessage('❌ | Invalid format!', event.threadID, msgID);
-            const tex = (await axios.get(`${link}?teach=${encodeURIComponent(final)}&senderID=${uid}&reply=${encodeURIComponent(command)}&key=intro`)).data.message;
-            return api.sendMessage(`✅ জবাব যোগ করা হয়েছে: ${tex}`, event.threadID, msgID);
-        }
-
-        if (args[0] === 'teach' && args[1] === 'react') {
-            [comd, command] = dipto.split(/\s*-\s*/);
-            final = comd.replace("teach react ", "");
-            if (!command || command.length < 2) return api.sendMessage('❌ | Invalid format!', event.threadID, msgID);
-            const tex = (await axios.get(`${link}?teach=${encodeURIComponent(final)}&react=${encodeURIComponent(command)}`)).data.message;
-            return api.sendMessage(`✅ রিঅ্যাক্ট যোগ করা হয়েছে: ${tex}`, event.threadID, msgID);
-        }
-
-        if (dipto.includes('amar name ki') || dipto.includes('amr nam ki') || dipto.includes('amar nam ki') || dipto.includes('amr name ki') || dipto.includes('whats my name')) {
-            const data = (await axios.get(`${link}?text=amar name ki&senderID=${uid}&key=intro`)).data.reply;
-            return api.sendMessage(`💝 ${data}`, event.threadID, msgID);
-        }
-
+        // এখানে অন্যান্য কমান্ড প্রসেসিং রাখুন
         const res = await axios.get(`${link}?text=${encodeURIComponent(dipto)}&senderID=${uid}&font=1`);
         let d = res.data?.reply || res.data?.message;
         
-        // যদি API কোনো রেসপন্স না দেয়, আমাদের নিজস্ব রেসপন্স দিই
         if (!d) {
-            d = getMixedResponse();
+            d = getEmotionalResponse('romantic');
         }
 
         api.sendMessage(d, event.threadID, (error, info) => {
@@ -243,7 +268,7 @@ module.exports.onStart = async ({
 
     } catch (e) {
         console.log("Error in onStart:", e);
-        api.sendMessage("❌ ওপস! কিছু সমস্যা হয়েছে। দয়া করে পরে চেষ্টা করুন।", event.threadID, msgID);
+        api.sendMessage("❌ ওপস! কিছু সমস্যা হয়েছে।", event.threadID, msgID);
     }
 };
 
@@ -258,18 +283,28 @@ module.exports.onReply = async ({
         const userText = event.body.trim();
         if (userText.length === 0) return;
 
-        const link = `${await baseApiUrl()}/baby`;
-        
-        const response = await axios.get(`${link}?text=${encodeURIComponent(userText)}&senderID=${event.senderID}&font=1`);
-        
-        let reply = response.data?.reply || response.data?.message;
+        // ইমোশন ডিটেক্ট করো
+        const detectedEmotion = detectEmotion(userText);
+        trackConversation(event.senderID, detectedEmotion);
 
-        // যদি API রিপ্লাই না দেয়, আমাদের ডাটাবেস থেকে দিই
-        if (!reply) {
-            reply = getMixedResponse();
+        // ইমোশনাল রেসপন্স পাও
+        let response = getEmotionalResponse(detectedEmotion);
+        
+        // ৩০% চান্স API থেকে রেসপন্স আসবে
+        if (Math.random() < 0.3) {
+            const link = `${await baseApiUrl()}/baby`;
+            try {
+                const apiRes = await axios.get(`${link}?text=${encodeURIComponent(userText)}&senderID=${event.senderID}&font=1`);
+                if (apiRes.data?.reply || apiRes.data?.message) {
+                    response = apiRes.data?.reply || apiRes.data?.message;
+                }
+            } catch (err) {
+                console.log("API Error:", err);
+            }
         }
 
-        return await api.sendMessage(reply, event.threadID, (error, info) => {
+        // প্রথম রেসপন্স পাঠাও
+        api.sendMessage(response, event.threadID, (error, info) => {
             if (error) return console.log("Send Message Error:", error);
             if (info && info.messageID) {
                 global.GoatBot.onReply.set(info.messageID, {
@@ -281,9 +316,28 @@ module.exports.onReply = async ({
             }
         }, msgID);
 
+        // ১-৩ সেকেন্ড পর ফলো-আপ মেসেজ পাঠাও
+        const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+        await delay(1500 + Math.random() * 1500);
+
+        let followUp = followUpResponses[detectedEmotion]?.[Math.floor(Math.random() * followUpResponses[detectedEmotion].length)] 
+                      || "এখন কেমন আছো বেবু? 💕";
+
+        api.sendMessage(followUp, event.threadID, (error, info) => {
+            if (error) return console.log("Follow-up Error:", error);
+            if (info && info.messageID) {
+                global.GoatBot.onReply.set(info.messageID, {
+                    commandName: this.config.name,
+                    type: "reply",
+                    messageID: info.messageID,
+                    author: event.senderID
+                });
+            }
+        });
+
     } catch (err) {
         console.log("Error in onReply:", err);
-        return api.sendMessage(getMixedResponse(), event.threadID, event.messageID || null);
+        return api.sendMessage("💕 আমি শুনছি সোনা, বলো!", event.threadID, event.messageID || null);
     }
 };
 
@@ -300,12 +354,10 @@ module.exports.onChat = async ({
 
         if (hasTrigger) {
             const arr = body.replace(/^\S+\s*/, "").trim();
-            const link = `${await baseApiUrl()}/baby`;
-
-            // যদি শুধু ট্রিগার ওয়ার্ড লেখা হয়
+            
             if (!arr) {
-                const selectedReply = getMixedResponse();
-                return await api.sendMessage(selectedReply, event.threadID, (error, info) => {
+                const response = getEmotionalResponse('romantic');
+                api.sendMessage(response, event.threadID, (error, info) => {
                     if (error) return console.log("Error:", error);
                     if (info && info.messageID) {
                         global.GoatBot.onReply.set(info.messageID, {
@@ -316,19 +368,15 @@ module.exports.onChat = async ({
                         });
                     }
                 }, msgID);
-            }
+            } else {
+                // ইমোশন ডিটেক্ট করো
+                const emotion = detectEmotion(arr);
+                trackConversation(event.senderID, emotion);
 
-            // যদি কথার সাথে লিখা থাকে
-            try {
-                const apiResponse = await axios.get(`${link}?text=${encodeURIComponent(arr)}&senderID=${event.senderID}&font=1`);
-                
-                let a = apiResponse.data?.reply || apiResponse.data?.message;
+                // প্রাথমিক রেসপন্স
+                let primaryResponse = getEmotionalResponse(emotion);
 
-                if (!a) {
-                    a = getMixedResponse();
-                }
-
-                return await api.sendMessage(a, event.threadID, (error, info) => {
+                api.sendMessage(primaryResponse, event.threadID, (error, info) => {
                     if (error) return console.log("Error:", error);
                     if (info && info.messageID) {
                         global.GoatBot.onReply.set(info.messageID, {
@@ -339,10 +387,25 @@ module.exports.onChat = async ({
                         });
                     }
                 }, msgID);
-            } catch (apiErr) {
-                console.log("API Error:", apiErr);
-                const fallbackMsg = getMixedResponse();
-                return await api.sendMessage(fallbackMsg, event.threadID, msgID);
+
+                // ফলো-আপ মেসেজ
+                const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+                await delay(1500 + Math.random() * 1500);
+
+                let followUp = followUpResponses[emotion]?.[Math.floor(Math.random() * followUpResponses[emotion].length)]
+                              || "আরও বলো... আমি শুনছি 💬";
+
+                api.sendMessage(followUp, event.threadID, (error, info) => {
+                    if (error) return console.log("Follow-up Error:", error);
+                    if (info && info.messageID) {
+                        global.GoatBot.onReply.set(info.messageID, {
+                            commandName: this.config.name,
+                            type: "reply",
+                            messageID: info.messageID,
+                            author: event.senderID
+                        });
+                    }
+                });
             }
         }
     } catch (err) {
