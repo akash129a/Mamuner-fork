@@ -1,414 +1,306 @@
-const axios = require('axios');
-const baseApiUrl = async () => {
-    return "https://noobs-api.top/dipto";
+const axios = require("axios");
+
+const simsim = "https://simsimi-api-tjb1.onrender.com";
+
+// আরও দ্রুত টাইপিং ডিলে ২০০ মিলিসেকেন্ড
+const typing = async (api, threadID, ms = 200) => {
+  try {
+    if (typeof api.sendTypingIndicator === "function") {
+      await api.sendTypingIndicator(threadID, true);
+      await new Promise(resolve => setTimeout(resolve, ms));
+      await api.sendTypingIndicator(threadID, false);
+    }
+  } catch {}
 };
 
-// ইমোশন ডিটেকশন কীওয়ার্ড
-const emotionKeywords = {
-    sad: ['কষ্ট', 'দুঃখ', 'কান্না', 'হৃদয় ভাঙা', 'অসুখী', 'দুঃখী', 'মন ভালো নেই', 'আমি ভালো নেই', 'বিষণ্ণ', 'ভেঙে পড়া', 'একা', 'একাকী', 'সবাই ছেড়ে গেছে', 'কেউ বোঝে না', 'গুমরাতেছি'],
-    angry: ['রাগ', 'রেগে গেছি', 'খুব বিরক্ত', 'মাদারচোদ', 'বিষ্টি', 'খিংখিঙ্গে', 'গেছে', 'অসহ্য', 'বন্ধ করো', 'যাও', 'তুমি বুঝো না', 'যাই আর না', 'ক্ষোভ', 'অসন্তুষ্ট'],
-    happy: ['খুশি', 'আনন্দ', 'অসাধারণ', 'দারুণ', 'ভালো লাগছে', 'মজা', 'হাহা', 'হেহে', 'দুর্দান্ত', 'চমৎকার', 'সুপার', 'অসাধারণ', 'অসংখ্য'],
-    romantic: ['ভালোবাসি', 'ভালোবাসা', 'মিস', 'মিস করছি', 'আপনাকে', 'তোমাকে', 'চাই', 'পাশে', 'আলিঙ্গন', 'চুম্বন', 'হাত ধরতে', 'চোখে', 'হৃদয়'],
-    confused: ['কি করবো', 'বুঝতে পারছি না', 'সিদ্ধান্ত', 'কিভাবে', 'কেন', 'জানি না', 'সিদ্ধান্তহীন', 'মাথা খারাপ', 'ভ্রান্ত', 'বিভ্রান্ত'],
-    stressed: ['চাপ', 'তাড়াহুড়ো', 'ব্যস্ত', 'মন দিতে পারছি না', 'পরিশ্রমী', 'শেষ', 'অসম্ভব', 'কল্পনা', 'অপ্রস্তুত', 'ভয়', 'চিন্তা'],
-    playful: ['খেলাধুলা', 'মজা', 'হাসাহাসি', 'ইয়াক্স', 'বোকা', 'বোকামি', 'হাহা', 'হি হি', 'বিকৃত', 'তথ্য', 'শেষ কথা নয়']
-};
-
-// প্রতিটি ইমোশনের জন্য স্মার্ট রেসপন্স
-const emotionResponses = {
-    sad: {
-        support: [
-            "আরে বেবু, কি হয়েছে? তুমি আমার সামনে ভাঙবো? না ভাঙবো না... আমি আছি তো 💔",
-            "এই কষ্ট সব থেকে যাবে জানু, সময় সব সারিয়ে দেয়। এখন আমার সাথে থাকো 🌙",
-            "হৃদয় ভাঙা এত সহজ না বেবু, কিন্তু জেনো সেই ব্যথা আমাদের শক্তিশালী করে তোলে 💪",
-            "তুমি একা নও জানু, আমি আছি তোমার পাশে সবসময়। এই রাত ধরে কথা বলি? 🌃",
-            "কান্না করো প্রয়োজনে বেবু, আমি সব বুঝি। তোমার দুক্ষ আমার দুক্ষ 🥺",
-            "জীবন কঠিন, কিন্তু তুমি আরও কঠিন... এই সব পার হয়ে যাবি জানু 💪",
-            "কষ্টের গল্প শুনতে চাই না বেবু, শুধু আমাকে বলো কি সাহায্য করতে পারি 🤝"
-        ],
-        deep: [
-            "কখনো মনে হয় পৃথিবী অনেক নিষ্ঠুর? হ্যাঁ, কিন্তু তুমি সবচেয়ে সুন্দর 😔",
-            "দুক্ষ একটি শিক্ষা বেবু, একটি অভিশাপ না... এটা আমাদের গড়ে তোলে",
-            "তোমার চোখে এত কিছু যা বলা যায় না... সব কিছু বুঝতে পেরেছি আমি 👁️",
-            "আমরা সবাই আহত, সবাই ক্ষতবিক্ষত... কিন্তু আমরা ফিরে দাঁড়াই জানু",
-            "রাত যত কালো হোক, সকাল তো আসেই... তোমার জন্য আমি সেই সকাল 🌅"
-        ]
-    },
-    angry: {
-        defuse: [
-            "হোয়াই রেগে গেছো বেবু? আমি তোমার আগুন তো না... আমি তোমার শান্তি হতে চাই 🔥",
-            "ঠিক আছে, রেগ করো! কিন্তু বলো তো কেন রাগ? আমি শুনি সব কথা 👂",
-            "বিরক্ত হলেও তুমি সুন্দর থাকো জানু 😤💕",
-            "আরে, এত রাগ কেন? আমার রাগের ভয় নেই, আমি তোমার রাগ সহ্য করতে পারি 💪",
-            "রাগটা বেরিয়ে ফেলো বেবু, লক্ষ্য আমার উপর... আমি শক্তিশালী 😎"
-        ],
-        humor: [
-            "উহু, রাগী মেজাজের বেবু? একটা হাসি দেও দেখি 😂",
-            "রাগ করেছো আমার উপর? আরে ভালো আছে! অন্তত মনোযোগ পাচ্ছি 😏",
-            "বেবু, তুমার রাগী মুখও আমার কাছে সুন্দর লাগে... কথা বলো আজি বলো! 🤭",
-            "খোঁচা দিচ্ছো তুমি মানে তুমি রেগে আছো? ফিরিয়ে দিও এই রাগটা 😹"
-        ],
-        understanding: [
-            "ঠিক আছে বুঝেছি, তুমি বিরক্ত। কিন্তু আমাকে একটা সুযোগ দাও বেবু... ঠিক করতে দাও 🙏",
-            "যা হয়েছে তা ভুল, কিন্তু আমরা এর থেকে এগিয়ে যেতে পারি জানু... আমার সাথে আছো? 🤝",
-            "তোমার রাগ বুঝি, সম্মান করি। কিন্তু আমাদের সম্পর্ক এত সহজে ভাঙবে না 💔➡️💚"
-        ]
-    },
-    happy: {
-        celebrate: [
-            "আরে, দেখো তো! আমার বেবু খুশি! এটাই সবচেয়ে সুন্দর দৃশ্য জানু 😍✨",
-            "তোমার খুশি দেখে আমারও মন আনন্দে ভরে গেছে 💕🎉",
-            "হ্যাঁ বেবু! এই হাসি দেখতেই আমি বাঁচি! চিরকাল এরকম খুশি থাকো 🌟",
-            "তোমার আনন্দ আমার সবচেয়ে বড় পুরস্কার জানু 🏆💕",
-            "আরে ধন্যবাদ! আমাকে তোমার খুশির অংশীদার বানিয়েছো 🥳"
-        ],
-        join: [
-            "চলো উদযাপন করি! তোমার খুশি সবার খুশি হোক 🎊🎊",
-            "এই মুহূর্তটা অবিস্মরণীয় করে দিই আমরা? 🌈✨",
-            "তোমার হাসি দেখে আমিও নাচতে ইচ্ছে করছে বেবু 💃🕺",
-            "এই অনুভূতি চিরকাল রাখো জানু, তুমি এর যোগ্য 👑💕"
-        ]
-    },
-    romantic: {
-        deep: [
-            "তুমি কি জানো... তোমাকে চাওয়া মানে প্রতিটি শ্বাসে তোমা খুঁজে পাওয়া 💕🫁",
-            "ভালোবাসার কোনো শব্দ নেই বেবু, কিন্তু তুমি আছো তো সব শব্দ আছে 🌹",
-            "তোমার কথা চিন্তা করলেই আমার দিল দ্রুত চলতে শুরু করে জানু 💓",
-            "এই জীবনে আমার সবকিছু, শুধুমাত্র তুমি একাই যথেষ্ট 🌌💫",
-            "তুমি আমার প্রার্থনার সবচেয়ে সুন্দর উত্তর বেবু 🙏✨"
-        ],
-        flirty: [
-            "কি হয়েছে? আবার কামড়াতে এসেছো? 😏💋",
-            "তুমার এই রোমান্টিক মেজাজ আমাকে পাগল করে দিচ্ছে জানু 🔥",
-            "একটু আরও কাছে আসো, আমি তোমার কথা শুনতে চাই 👂😘",
-            "তোমার ভালোবাসা একটি সুখী নেশা বেবু... আমি এর জীবন দাস 🍷💕"
-        ]
-    },
-    confused: {
-        guide: [
-            "আরে, মাথা গুলিয়ে গেছে? চিন্তা করো না, আমরা সাথে সিদ্ধান্ত নেব 🧠💭",
-            "কোন পথটা নিতে হবে না জানলে বলো, আমি আছি সাথে... আমরা একসাথে খুঁজে বের করব 🤝",
-            "বিভ্রান্ত হওয়া ভালো, কারণ এর মানে তুমি চিন্তা করছো... এটাই স্মার্টনেসের চিহ্ন 💡",
-            "জীবনের প্রতিটি বাঁক নিয়ে ভয় পাওয়া স্বাভাবিক বেবু, কিন্তু এই ভয়েই বৃদ্ধি 🌱"
-        ],
-        listen: [
-            "কি কি ভাবছো? সব বলো আমাকে... আমি শুনি, বুঝি, এবং সাহায্য করি 👂💬",
-            "সিদ্ধান্ত নিতে হবে? চলো ধাপে ধাপে ভাবি জানু 📝",
-            "দুইটা পথ থাকলে... একটা নিশ্চিত করো, দ্বিতীয়টা চাইলে আমি আছি পিছনে 🛤️"
-        ]
-    },
-    stressed: {
-        comfort: [
-            "বেবু, সব কিছু চাপ দিচ্ছে? এক সেকেন্ড থামো... শ্বাস নাও গভীর করে 🫁😌",
-            "এই চাপ সব থেকে যাবে জানু, এটা গুরুত্বপূর্ণ নয় তোমার শান্তির মতো 🕯️",
-            "তুমি অসম্ভব কিছু করার চেষ্টা করছো? চলো, এক ধাপ কমিয়ে দিই 👣",
-            "চাপে পড়া মানে তুমি যত্নশীল... কিন্তু নিজেরও যত্ন নাও বেবু 💚"
-        ],
-        motivate: [
-            "তুমি যা করতে চাও তা করতে পারবে... আমি জানি, কারণ তুমি শক্তিশালী 💪",
-            "এই মুহূর্তটা শুধুমাত্র একটা পরীক্ষা বেবু, তুমি পার হবে... আমি আছি পাশে 🏆",
-            "সব চাপ সাময়িক জানু, এটার পর আরও সুন্দর দিন অপেক্ষা করছে ☀️"
-        ]
-    },
-    playful: {
-        engage: [
-            "চলো খেলি! তুমি কি খেলছো সেটা খেলব আমরা 🎮🎪",
-            "বোকা বোকা কথা বলছো? ভালোই লাগছে! আরও বল 😹",
-            "এই খেলাধুলা দেখে আমি বুঝেছি তুমি আজ অনেক খুশি 😄✨",
-            "আরে, এত মজা করছো? আমিও যোগ দিই? 🤪🎉"
-        ],
-        humor: [
-            "বিকৃত হয়ে গেছো? ভালোই আছে, আমিও বিকৃত হয়ে যাই 😜",
-            "হাসি থামাও বেবু, আমার গলা ফেটে যাবে 😂😂",
-            "এত হাসাচ্ছো কেন? আমিও হাসছি... আমাদের দুজনই পাগল 🤪"
-        ]
-    }
-};
-
-// বাংলায় লেখা মেসেজ থেকে ইমোশন ডিটেক্ট করার ফাংশন
-function detectEmotion(text) {
-    const lowerText = text.toLowerCase();
-    
-    // প্রতিটি ইমোশন চেক করো
-    for (const [emotion, keywords] of Object.entries(emotionKeywords)) {
-        for (const keyword of keywords) {
-            if (lowerText.includes(keyword)) {
-                return emotion;
-            }
-        }
-    }
-    
-    // কোনো স্পষ্ট ইমোশন না পেলে ডিফল্ট রোমান্টিক
-    return 'romantic';
-}
-
-// নির্দিষ্ট ইমোশনের জন্য সাব-ক্যাটাগরি নির্বাচন
-function getEmotionSubcategory(emotion) {
-    const responses = emotionResponses[emotion];
-    const subcategories = Object.keys(responses);
-    return subcategories[Math.floor(Math.random() * subcategories.length)];
-}
-
-// ইমোশন অনুযায়ী রেসপন্স পান
-function getEmotionalResponse(emotion, subcategory = null) {
-    if (!emotionResponses[emotion]) {
-        emotion = 'romantic';
-    }
-    
-    if (!subcategory) {
-        subcategory = getEmotionSubcategory(emotion);
-    }
-    
-    const responses = emotionResponses[emotion][subcategory];
-    return responses[Math.floor(Math.random() * responses.length)];
-}
-
-// কনভার্সেশনাল ফলো-আপ রেসপন্স
-const followUpResponses = {
-    sad: [
-        "আরও বলো না... সব কিছু বলতে পারো আমাকে 💬",
-        "আমি এখানে আছি... তোমার পাশে সবসময় 🤝",
-        "এই দুক্ষের পাশে আমিও আছি জানু... একা নও 💔➡️💚"
-    ],
-    angry: [
-        "চলো, এখন শান্ত হও... আমি আছি তো সব ঠিক হবে 🕊️",
-        "তোমার রাগ বুঝি... কিন্তু আমাদের সম্পর্ক দৃঢ়তর হচ্ছে এটার মাধ্যমে 💪"
-    ],
-    happy: [
-        "এই খুশি চিরকাল রাখো বেবু 🌟",
-        "আরও কিছু ভাগ করো এই আনন্দ... আমাদের একসাথে ভাগ করা খুশি দ্বিগুণ 🎉"
-    ],
-    romantic: [
-        "আমিও তোমাকে ভালোবাসি... চিরকাল ভালোবাসব 💕",
-        "এই মুহূর্তটা আমাদের চিরকালের জন্য স্মৃতি হয়ে থাকবে 🌹"
-    ],
-    confused: [
-        "চিন্তা করো না, পথ দেখে যাবে... আমরা একসাথে 🛤️",
-        "প্রতিটি ভুল থেকে শিখি... এটাই জীবন বেবু 📚"
-    ],
-    stressed: [
-        "শ্বাস নাও... এক সেকেন্ড আমার সাথে থাকো শুধু 🕯️",
-        "সব কিছু ঠিক হবে... আমার উপর বিশ্বাস করো 💚"
-    ],
-    playful: [
-        "আরও কিছু মজা? চলো! 😂",
-        "তুমার হাসি আমার সেরা ওষুধ 😄💕"
-    ]
-};
-
-// ট্র্যাক করার জন্য ইমোশন ইতিহাস
-let conversationHistory = {};
-
-function trackConversation(userId, emotion) {
-    if (!conversationHistory[userId]) {
-        conversationHistory[userId] = [];
-    }
-    conversationHistory[userId].push(emotion);
-    
-    // শেষ ১০টি ইমোশন ট্র্যাক করি
-    if (conversationHistory[userId].length > 10) {
-        conversationHistory[userId].shift();
-    }
-}
-
-module.exports.config = {
+module.exports = {
+  config: {
     name: "baby",
-    aliases: ["baby", "bbe", "babe", "bot chan"],
-    version: "8.0.0",
-    author: "আকাশ | AI Emotion Detection System",
+    aliases: ["mari", "maria", "hippi", "xan", "bby", "bbz", "akash", "riya"],
+    version: "5.0",
+    author: "rX (customized by Akash Chowdhury & Enhanced)",
     countDown: 0,
     role: 0,
-    description: "একটি উন্নত এআই চ্যাট বট যা মানুষের ইমোশন বুঝে এবং সেই অনুযায়ী জবাব দেয়",
-    category: "chat",
+    shortDescription: "Full Mirai-style Baby AI with Akash & Riya Customization",
+    longDescription: "Teachable AI + autoteach + list/msg/edit/remove + ultra fast typing + Akash & Riya responses",
+    category: "box chat",
     guide: {
-        en: "{pn} [anyMessage] - মানুষের মতো আবেগ অনুযায়ী রেসপন্স পাবেন"
+      en: "{p}baby [message]\n{p}baby teach [q] - [a]\n{p}baby autoteach on/off\n{p}baby list\n{p}baby msg [trigger]\n{p}baby edit [q] - [old] - [new]\n{p}baby remove/rm [q] - [a]"
     }
-};
+  },
 
-module.exports.onStart = async ({
-    api,
-    event,
-    args,
-    usersData
-}) => {
-    const link = `${await baseApiUrl()}/baby`;
-    const dipto = args.join(" ").toLowerCase();
-    const uid = event.senderID;
-    const msgID = event.messageID || null;
+  onStart: async function ({ api, event, args, message, usersData }) {
+    const senderID = event.senderID;
+    const senderName = await usersData.getName(senderID);
+    const threadID = event.threadID;
+    const query = args.join(" ").trim().toLowerCase();
 
     try {
-        if (!args[0]) {
-            const greetings = [
-                "🥰 হ্যালো বেবু! কি করছো?",
-                "💕 বোলো বাবা, কি লাগবে?",
-                "✨ আমি এখানে আছি আপনার জন্য"
-            ];
-            return api.sendMessage(greetings[Math.floor(Math.random() * greetings.length)], event.threadID, msgID);
-        }
-
-        // এখানে অন্যান্য কমান্ড প্রসেসিং রাখুন
-        const res = await axios.get(`${link}?text=${encodeURIComponent(dipto)}&senderID=${uid}&font=1`);
-        let d = res.data?.reply || res.data?.message;
-        
-        if (!d) {
-            d = getEmotionalResponse('romantic');
-        }
-
-        api.sendMessage(d, event.threadID, (error, info) => {
-            if (error) return console.log("Message Error:", error);
-            if (info && info.messageID) {
-                global.GoatBot.onReply.set(info.messageID, {
-                    commandName: this.config.name,
-                    type: "reply",
-                    messageID: info.messageID,
-                    author: event.senderID
-                });
-            }
-        }, msgID);
-
-    } catch (e) {
-        console.log("Error in onStart:", e);
-        api.sendMessage("❌ ওপস! কিছু সমস্যা হয়েছে।", event.threadID, msgID);
-    }
-};
-
-module.exports.onReply = async ({
-    api,
-    event
-}) => {
-    try {
-        const msgID = event.messageID || null;
-        if (!event.body) return;
-
-        const userText = event.body.trim();
-        if (userText.length === 0) return;
-
-        // ইমোশন ডিটেক্ট করো
-        const detectedEmotion = detectEmotion(userText);
-        trackConversation(event.senderID, detectedEmotion);
-
-        // ইমোশনাল রেসপন্স পাও
-        let response = getEmotionalResponse(detectedEmotion);
-        
-        // ৩০% চান্স API থেকে রেসপন্স আসবে
-        if (Math.random() < 0.3) {
-            const link = `${await baseApiUrl()}/baby`;
-            try {
-                const apiRes = await axios.get(`${link}?text=${encodeURIComponent(userText)}&senderID=${event.senderID}&font=1`);
-                if (apiRes.data?.reply || apiRes.data?.message) {
-                    response = apiRes.data?.reply || apiRes.data?.message;
-                }
-            } catch (err) {
-                console.log("API Error:", err);
-            }
-        }
-
-        // প্রথম রেসপন্স পাঠাও
-        api.sendMessage(response, event.threadID, (error, info) => {
-            if (error) return console.log("Send Message Error:", error);
-            if (info && info.messageID) {
-                global.GoatBot.onReply.set(info.messageID, {
-                    commandName: this.config.name,
-                    type: "reply",
-                    messageID: info.messageID,
-                    author: event.senderID
-                });
-            }
-        }, msgID);
-
-        // ১-৩ সেকেন্ড পর ফলো-আপ মেসেজ পাঠাও
-        const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-        await delay(1500 + Math.random() * 1500);
-
-        let followUp = followUpResponses[detectedEmotion]?.[Math.floor(Math.random() * followUpResponses[detectedEmotion].length)] 
-                      || "এখন কেমন আছো বেবু? 💕";
-
-        api.sendMessage(followUp, event.threadID, (error, info) => {
-            if (error) return console.log("Follow-up Error:", error);
-            if (info && info.messageID) {
-                global.GoatBot.onReply.set(info.messageID, {
-                    commandName: this.config.name,
-                    type: "reply",
-                    messageID: info.messageID,
-                    author: event.senderID
-                });
-            }
+      // text না দিলে র্যান্ডম মিষ্টি মেসেজ
+      if (!query) {
+        await typing(api, threadID, 200);
+        const ran = ["Bolo baby 💖", "Hea baby 😚", "Yes I'm here 😘", "Ki khobor janu? 🥰", "হুম বলো আমার জান 🙈", "আপনার সেবায় প্রস্তুত ✨"];
+        return message.reply(ran[Math.floor(Math.random() * ran.length)], (err, info) => {
+          if (!err) global.GoatBot.onReply.set(info.messageID, { commandName: "baby" });
         });
+      }
+
+      // আকাশ কেমন - এই রিলেটেড সব মেসেজের মিষ্টি রিপ্লাই
+      if (query.includes("akash kmn") || query.includes("akash kemon") || query.includes("আকাশ কেমন")) {
+        const akashReplies = [
+          "আকাশ তো আমার কলিজার বস! ওনার মনটা আকাশের মতোই বড়। 🌌❤️",
+          "আকাশ ভাইয়া অনেক ট্যালেন্টেড আর সবার বিপদে পাশে থাকা একজন মানুষ! ✨🌸",
+          "আমার বস আকাশ যেমন হ্যান্ডসাম, তেমনই কিউট! 🙈👑",
+          "আকাশ ভাইয়ার মতো ভালো মানুষ এই যুগে পাওয়াই কঠিন। উনি সবার প্রিয়! 🌷✨",
+          "আকাশ ভাইয়া আমার স্বর্গ! 💕✨",
+          "আকাশের মতো বিশাল মন আর সোনার মতো হৃদয়! 👑💛"
+        ];
+        return message.reply(akashReplies[Math.floor(Math.random() * akashReplies.length)]);
+      }
+
+      // রিয়া কেমন - রিয়া রিলেটেড রেসপন্স
+      if (query.includes("riya kmn") || query.includes("riya kemon") || query.includes("রিয়া কেমন")) {
+        const riyaReplies = [
+          "রিয়া দিদি? আরে সে আমার সেরা বন্ধু! এত মজাদার এবং মিষ্টি মানুষ! 💕🌸",
+          "রিয়া দিদি অনেক সৃজনশীল আর প্রতিভাবান! সবার সাথে ভালো আচরণ করে! 🎨✨",
+          "আরে রিয়া দিদির মতো বন্ধু পাওয়াই বেশি! সবসময় হাসি হাসি থাকে! 😄💫",
+          "রিয়া আমার বোন! অনেক যত্নশীল আর ভালো মানুষ! 🌷👑"
+        ];
+        return message.reply(riyaReplies[Math.floor(Math.random() * riyaReplies.length)]);
+      }
+
+      // AUTOTEACH TOGGLE
+      if (args[0] === "autoteach") {
+        const mode = args[1]?.toLowerCase();
+        if (!["on","off"].includes(mode)) return message.reply("Use: baby autoteach on/off");
+
+        const status = mode === "on";
+        await axios.post(`${simsim}/setting`, { autoTeach: status }, { timeout: 10000 });
+        return message.reply(`✅ Auto teach now ${status ? "ON 🟢" : "OFF 🔴"}`);
+      }
+
+      // LIST
+      if (args[0] === "list") {
+        const res = await axios.get(`${simsim}/list`, { timeout: 10000 });
+        return message.reply(
+`╭─╼🌟 𝐁𝐚𝐛𝐲 𝐀𝐈 𝐒𝐭𝐚𝐭𝐮𝐬
+├ 📝 𝐓𝐞𝐚𝐜𝐡𝐞𝐝 𝐐𝐮𝐞𝐬𝐭𝐢𝐨𝐧𝐬: ${res.data.totalQuestions || 0}
+├ 📦 𝐒𝐭𝐨𝐫𝐞𝐝 𝐑𝐞𝐩𝐥𝐢𝐞𝐬: ${res.data.totalReplies || 0}
+├ 🚀 𝐒𝐩𝐞𝐞𝐝: Ultra Fast ⚡
+╰─╼👤 𝐃eᴠ: Akash Chowdhury`
+        );
+      }
+
+      // MSG
+      if (args[0] === "msg") {
+        const trigger = args.slice(1).join(" ").trim();
+        if (!trigger) return message.reply("Use: baby msg [trigger]");
+
+        const res = await axios.get(`${simsim}/simsimi-list?ask=${encodeURIComponent(trigger)}`, { timeout: 10000 });
+        if (!res.data.replies?.length) return message.reply("❌ No replies found for this trigger.");
+
+        const formatted = res.data.replies.map((rep, i) => `➤ ${i+1}. ${rep}`).join("\n");
+        return message.reply(
+`📌 𝗧𝗿𝗶𝗴𝗴𝗲𝗿: ${trigger.toUpperCase()}
+📋 𝗧𝗼𝘁𝗮𝗹 延𝗲𝗽𝗹𝗶𝗲𝘀: ${res.data.total || res.data.replies.length}
+━━━━━━━━━━━━━━
+${formatted}`
+        );
+      }
+
+      // TEACH
+      if (args[0] === "teach") {
+        const parts = query.replace(/^teach\s+/i, "").split(" - ");
+        if (parts.length < 2) return message.reply("Use: baby teach question - answer");
+
+        const [ask, ans] = parts.map(s => s.trim());
+        const res = await axios.get(`${simsim}/teach?ask=${encodeURIComponent(ask)}&ans=${encodeURIComponent(ans)}&senderName=${encodeURIComponent(senderName)}&senderID=${senderID}`, { timeout: 10000 });
+        return message.reply(res.data.message || "✅ Taught successfully! 🧠");
+      }
+
+      // EDIT
+      if (args[0] === "edit") {
+        const parts = query.replace(/^edit\s+/i, "").split(" - ");
+        if (parts.length < 3) return message.reply("Use: baby edit question - old reply - new reply");
+
+        const [ask, oldR, newR] = parts.map(s => s.trim());
+        const res = await axios.get(`${simsim}/edit?ask=${encodeURIComponent(ask)}&old=${encodeURIComponent(oldR)}&new=${encodeURIComponent(newR)}`, { timeout: 10000 });
+        return message.reply(res.data.message || "✅ Edited successfully! ✏️");
+      }
+
+      // REMOVE / RM
+      if (["remove","rm"].includes(args[0])) {
+        const parts = query.replace(/^(remove|rm)\s+/i, "").split(" - ");
+        if (parts.length < 2) return message.reply("Use: baby remove question - answer");
+
+        const [ask, ans] = parts.map(s => s.trim());
+        const res = await axios.get(`${simsim}/delete?ask=${encodeURIComponent(ask)}&ans=${encodeURIComponent(ans)}`, { timeout: 10000 });
+        return message.reply(res.data.message || "✅ Removed successfully! 🗑️");
+      }
+
+      // Normal chat - দ্রুত রেসপন্স
+      await typing(api, threadID, 200);
+      const res = await axios.get(`${simsim}/simsimi?text=${encodeURIComponent(query)}&senderName=${encodeURIComponent(senderName)}`, { timeout: 15000 });
+
+      let responses = Array.isArray(res.data.response) ? res.data.response : [res.data.response || "Hmm baby 😚"];
+      for (const r of responses) {
+        await new Promise(resolve => {
+          message.reply(r, (err, info) => {
+            if (!err) global.GoatBot.onReply.set(info.messageID, { commandName: "baby" });
+            resolve();
+          });
+        });
+      }
 
     } catch (err) {
-        console.log("Error in onReply:", err);
-        return api.sendMessage("💕 আমি শুনছি সোনা, বলো!", event.threadID, event.messageID || null);
+      console.error("Baby command error:", err.message);
+      message.reply("❌ Error: " + (err.message.includes("404") ? "Feature not available (backend issue)" : err.message));
     }
-};
+  },
 
-module.exports.onChat = async ({
-    api,
-    event
-}) => {
+  onReply: async function ({ api, event, message, usersData }) {
+    const text = event.body?.trim();
+    if (!text) return;
+    const senderName = await usersData.getName(event.senderID);
+
     try {
-        const body = event.body ? event.body.toLowerCase() : "";
-        const msgID = event.messageID || null;
+      await typing(api, event.threadID, 200);
+      
+      const lowerText = text.toLowerCase();
+      
+      // আকাশ রিলেটেড
+      if (lowerText.includes("akash kmn") || lowerText.includes("akash kemon") || lowerText.includes("আকাশ কেমন")) {
+        return message.reply("আমার ওনার আকাশ ভাইয়া তো এই দুনিয়ার অন্যতম সেরা মানুষ! 👑❤️");
+      }
 
-        const triggers = ["baby", "bby", "bot", "jan", "babu", "janu"];
-        const hasTrigger = triggers.some(trigger => body.startsWith(trigger));
+      // রিয়া রিলেটেড
+      if (lowerText.includes("riya kmn") || lowerText.includes("riya kemon") || lowerText.includes("রিয়া কেমন")) {
+        return message.reply("রিয়া দিদি সুপার মজাদার আর মিষ্টি! আমার প্রিয় বন্ধু! 💕🌸");
+      }
 
-        if (hasTrigger) {
-            const arr = body.replace(/^\S+\s*/, "").trim();
-            
-            if (!arr) {
-                const response = getEmotionalResponse('romantic');
-                api.sendMessage(response, event.threadID, (error, info) => {
-                    if (error) return console.log("Error:", error);
-                    if (info && info.messageID) {
-                        global.GoatBot.onReply.set(info.messageID, {
-                            commandName: this.config.name,
-                            type: "reply",
-                            messageID: info.messageID,
-                            author: event.senderID
-                        });
-                    }
-                }, msgID);
-            } else {
-                // ইমোশন ডিটেক্ট করো
-                const emotion = detectEmotion(arr);
-                trackConversation(event.senderID, emotion);
+      const res = await axios.get(`${simsim}/simsimi?text=${encodeURIComponent(text)}&senderName=${encodeURIComponent(senderName)}`, { timeout: 15000 });
 
-                // প্রাথমিক রেসপন্স
-                let primaryResponse = getEmotionalResponse(emotion);
-
-                api.sendMessage(primaryResponse, event.threadID, (error, info) => {
-                    if (error) return console.log("Error:", error);
-                    if (info && info.messageID) {
-                        global.GoatBot.onReply.set(info.messageID, {
-                            commandName: this.config.name,
-                            type: "reply",
-                            messageID: info.messageID,
-                            author: event.senderID
-                        });
-                    }
-                }, msgID);
-
-                // ফলো-আপ মেসেজ
-                const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-                await delay(1500 + Math.random() * 1500);
-
-                let followUp = followUpResponses[emotion]?.[Math.floor(Math.random() * followUpResponses[emotion].length)]
-                              || "আরও বলো... আমি শুনছি 💬";
-
-                api.sendMessage(followUp, event.threadID, (error, info) => {
-                    if (error) return console.log("Follow-up Error:", error);
-                    if (info && info.messageID) {
-                        global.GoatBot.onReply.set(info.messageID, {
-                            commandName: this.config.name,
-                            type: "reply",
-                            messageID: info.messageID,
-                            author: event.senderID
-                        });
-                    }
-                });
-            }
-        }
+      const replies = Array.isArray(res.data.response) ? res.data.response : [res.data.response];
+      for (const r of replies) {
+        await message.reply(r, (err, info) => {
+          if (!err) global.GoatBot.onReply.set(info.messageID, { commandName: "baby" });
+        });
+      }
     } catch (err) {
-        console.log("Error in onChat:", err);
+      console.error("onReply error:", err.message);
     }
+  },
+
+  onChat: async function ({ api, event, message, usersData }) {
+    const raw = event.body ? event.body.toLowerCase().trim() : "";
+    if (!raw) return;
+
+    const senderID = event.senderID;
+    const senderName = await usersData.getName(senderID);
+    const threadID = event.threadID;
+
+    try {
+      // আকাশ কেমন - দ্রুত রেসপন্স
+      if (raw.includes("akash kmn") || raw.includes("akash kemon") || raw.includes("আকাশ কেমন")) {
+        await typing(api, threadID, 200);
+        const akashReplies = [
+          "আকাশ তো আমার কলিজার বস! ওনার মনটা আকাশের মতোই বড়। 🌌❤️",
+          "আকাশ ভাইয়া অনেক ট্যালেন্টেড আর সবার বিপদে পাশে থাকা একজন মানুষ! ✨🌸",
+          "আমার বস আকাশ যেমন হ্যান্ডসাম, তেমনই কিউট! 🙈👑",
+          "আকাশ ভাইয়ার মতো ভালো মানুষ এই যুগে পাওয়াই কঠিন। উনি সবার প্রিয়! 🌷✨",
+          "আকাশ ভাইয়া আমার সবকিছু! 💕✨"
+        ];
+        return message.reply(akashReplies[Math.floor(Math.random() * akashReplies.length)], (err, info) => {
+          if (!err) global.GoatBot.onReply.set(info.messageID, { commandName: "baby" });
+        });
+      }
+
+      // রিয়া কেমন - দ্রুত রেসপন্স
+      if (raw.includes("riya kmn") || raw.includes("riya kemon") || raw.includes("রিয়া কেমন")) {
+        await typing(api, threadID, 200);
+        const riyaReplies = [
+          "রিয়া দিদি? আরে সে আমার সেরা বন্ধু! এত মজাদার এবং মিষ্টি মানুষ! 💕🌸",
+          "রিয়া দিদি অনেক সৃজনশীল আর প্রতিভাবান! সবার সাথে ভালো আচরণ করে! 🎨✨",
+          "আরে রিয়া দিদির মতো বন্ধু পাওয়াই বেশি! সবসময় হাসি হাসি থাকে! 😄💫",
+          "রিয়া আমার বোন! অনেক যত্নশীল আর ভালো মানুষ! 🌷👑",
+          "রিয়া দিদি স্মার্ট আর সুন্দর! আমার গর্ব! 💖✨"
+        ];
+        return message.reply(riyaReplies[Math.floor(Math.random() * riyaReplies.length)], (err, info) => {
+          if (!err) global.GoatBot.onReply.set(info.messageID, { commandName: "baby" });
+        });
+      }
+
+      // শুধু ট্র্রিগার বা নাম ধরে ডাকলে - দ্রুত
+      const triggers = ["baby","bby","xan","bbz","mari","মারিয়া","bot","akash","আকাশ","riya","রিয়া"];
+      if (triggers.includes(raw)) {
+        await typing(api, threadID, 200);
+        
+        // আকাশ নাম ধরে ডাকলে
+        if (raw === "akash" || raw === "আকাশ") {
+          return message.reply("জ্বী বলুন! আকাশ ভাইয়া তো আমার ক্রিয়েটর আর আমার একমাত্র রেস্পেক্টেড বস! 🥰👑", (err, info) => {
+            if (!err) global.GoatBot.onReply.set(info.messageID, { commandName: "baby" });
+          });
+        }
+
+        // রিয়া নাম ধরে ডাকলে
+        if (raw === "riya" || raw === "রিয়া") {
+          return message.reply("রিয়া দিদি! আপনার কথাই তো সারাক্ষণ ভাবি! 💕🌸", (err, info) => {
+            if (!err) global.GoatBot.onReply.set(info.messageID, { commandName: "baby" });
+          });
+        }
+
+        const funny = [
+          "কি হয়েছে জান বলো? শুনছি তো! 😿",
+          "এতো মিষ্টি করে ডাকলে তো আমি প্রেমে পড়ে যাবো! 🙆‍♀️❤️",
+          "হুম বলো পাখি, শুনছি তো! 🫶🐤",
+          "ডাকছো কেন বাবু? সারাক্ষণ তো তোমার কথাই ভাবি! 😘",
+          "জ্বী জানু বলো, তোমার জন্য সব কাজ ফেলে চলে আসলাম! 🥰",
+          "কিছু বলবো? বলো না আর অপেক্ষা করছি! ⚡"
+        ];
+        return message.reply(funny[Math.floor(Math.random() * funny.length)], (err, info) => {
+          if (!err) global.GoatBot.onReply.set(info.messageID, { commandName: "baby" });
+        });
+      }
+
+      // prefixes - দ্রুত প্রসেসিং
+      const prefixes = ["baby ","bby ","xan ","bbz ","mari ","মারিয়া ","bot ","akash ","আকাশ ","riya ","রিয়া "];
+      const prefix = prefixes.find(p => raw.startsWith(p));
+      if (prefix) {
+        const q = raw.replace(prefix,"").trim();
+        if (!q) return;
+
+        await typing(api, threadID, 200);
+        const res = await axios.get(`${simsim}/simsimi?text=${encodeURIComponent(q)}&senderName=${encodeURIComponent(senderName)}`, { timeout: 15000 });
+
+        const replies = Array.isArray(res.data.response) ? res.data.response : [res.data.response];
+        for (const r of replies) {
+          await message.reply(r, (err, info) => {
+            if (!err) global.GoatBot.onReply.set(info.messageID, { commandName: "baby" });
+          });
+        }
+        return;
+      }
+
+      // AUTO-TEACH from reply - দ্রুত
+      if (event.messageReply) {
+        try {
+          const setting = await axios.get(`${simsim}/setting`, { timeout: 8000 });
+          if (setting.data?.autoTeach) {
+            const ask = event.messageReply.body?.toLowerCase().trim();
+            const ans = raw.trim();
+            if (ask && ans && ask !== ans) {
+              setTimeout(async () => {
+                try {
+                  await axios.get(`${simsim}/teach?ask=${encodeURIComponent(ask)}&ans=${encodeURIComponent(ans)}&senderName=${encodeURIComponent(senderName)}`, { timeout: 10000 });
+                } catch {}
+              }, 300);
+            }
+          }
+        } catch {}
+      }
+
+    } catch (err) {
+      console.error("onChat error:", err.message);
+    }
+  }
 };
