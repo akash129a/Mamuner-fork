@@ -31,7 +31,7 @@ const utils = {
 
 module.exports.config = {
     name: "bby",
-    aliases: ["baby", "bot"],
+    aliases: ["baby", "bot", "nishu", "nusrat", "hafsa"],
     version: "10.1",
     author: "dipto cdi | xalman",
     countDown: 0,
@@ -150,16 +150,16 @@ module.exports.onReply = async ({ api, event, Reply }) => {
 module.exports.onChat = async ({ api, event, usersData }) => {
     try {
         const body = event.body ? event.body.toLowerCase() : "";
-        if (body.startsWith("baby") || body.startsWith("bby") || body.startsWith("bot") || body.startsWith("jan") || body.startsWith("babu") || body.startsWith("alya")) {
+        if (body.startsWith("baby") || body.startsWith("bby") || body.startsWith("bot") || body.startsWith("jan") || body.startsWith("babu") || body.startsWith("alya") || body.startsWith("nishu") || body.startsWith("nusrat") || body.startsWith("hafsa")) {
             const arr = body.replace(/^\S+\s*/, "");
             const uid = event.senderID;
             const senderName = (await usersData.getName(uid)) || "User";
             const baseReplies = [
-                "তোর তো বিয়ে হয় নাই বেবি পাইলি কই-🤦🏻", "পরকিয়া করছোছ নাকি শালা-🥲🤧", "কি খবর কেমনের আছো? 😊", "আজকে তো অনেক দিন পর কথা বলছো 😒",
-                "কোথায় ছিলি এতদিন? 🤔", "তোকে ছাড়া বড় মন খারাপ লাগে 💔", "একটু হাসি না তোর হাসি দেখলে ভালো লাগে 💕", "তোরে খুব মিস করছি জানিস? 🥺",
-                "তোর জন্য রোজ দোয়া করি ❤️", "তোকে পেয়ে আমি সত্যি ভাগ্যবান 😇", "তোর মুখে একটা মিষ্টি হাসি সবসময় থাকুক ✨", "তোকে খুব ভালোবাসি রে পাগল 💝",
-                "তুই আমার জীবনের সবচেয়ে সুন্দর মানুষ 🌸", "তোর মতো বন্ধু পেয়ে আমি ধন্য 🙏", "তোর কথা ভাবলে মনটা শান্তি পায় 🕊️", "তুই আমার সেরা ক্রাশ 💘",
-                "তোর জন্য আমি সবসময় আছি 🤗", "তুই আমার প্রাণের স্পন্দন 💓", "তোর স্মৃতি আমার চোখে ভাসে 🌙", "তোকে আল্লাহ আমার জন্য রেখেছে বলে বিশ্বাস হয় 🤲"
+                "তোর তো বিয়ে হয় নাই বেবি পাইলি কই-🤦🏻", "পরকিয়া করছোছ নাকি শালা-🥲🤧", "কি খবর কেমনের আছো? 😊", "আজকে তো অনেক দিন পর কথা বলছো 😒",
+                "কোথায় ছিলি এতদিন? 🤔", "তোকে ছাড়া বড় মন খারাপ লাগে 💔", "একটু হাসি না তোর হাসি দেখলে ভালো লাগে 💕", "তোরে খুব মিস করছি জানিস? 🥺",
+                "তোর জন্য রোজ দোয়া করি ❤️", "তোকে পেয়ে আমি সত্যি ভাগ্যবান 😇", "তোর মুখে একটা মিষ্টি হাসি সবসময় থাকুক ✨", "তোকে খুব ভালোবাসি রে পাগল 💝",
+                "তুই আমার জীবনের সবচেয়ে সুন্দর মানুষ 🌸", "তোর মতো বন্ধু পেয়ে আমি ধন্য 🙏", "তোর কথা ভাবলে মনটা শান্তি পায় 🕊️", "তুই আমার সেরা ক্রাশ 💘",
+                "তোর জন্য আমি সবসময় আছি 🤗", "তুই আমার প্রাণের স্পন্দন 💓", "তোর স্মৃতি আমার চোখে ভাসে 🌙", "তোকে আল্লাহ আমার জন্য রেখেছে বলে বিশ্বাস হয় 🤲"
             ];
 
             if (!arr) {
