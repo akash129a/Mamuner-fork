@@ -56,6 +56,59 @@ const isCommandText = (text) =>
     /^(bby|baby|bot|jan|babu|alya|nishu|nusrat|hafsa)?\s*(teach|remove|rm|list|msg|edit)\b/i.test((text || "").trim());
 
 module.exports.config = {
+    name: "bby",
+    aliases: ["baby", "bot", "nishu", "nusrat", "hafsa"],
+    version: "10.2",
+    author: "dipto cdi | xalman",
+};
+
+module.exports.onStart = async ({ api, event, args, usersData }) => {
+    const link = `${await baseApiUrl()}/baby`;
+    const xalman = args.join(" ").toLowerCase();
+    const uid = event.senderID;
+    const senderName = (await usersData.getName(uid)) || "User";
+
+    try {
+        if (!args[0]) {
+            const ran = ["Bolo baby ❤️", "Type baby help", "Kichu bolooo", "Sunno ki?"];
+            return api.sendMessage(ran[Math.floor(Math.random() * ran.length)], event.threadID, event.messageID);
+        }
+
+        // Tinny-র নাম নিলে প্রশংসা করবে
+        const cmd = args[0].toLowerCase();
+        const isSubCommand = ["remove", "rm", "list", "msg", "edit", "teach"].includes(cmd);
+        if (!isSubCommand && hasTinny(xalman)) {
+            return api.sendMessage(utils.monospace(getTinnyPraise()), event.threadID, (error, info) => {
+                if (info) {
+                    global.GoatBot.onReply.set(info.messageID, { commandName: this.config.name, type: "reply", messageID: info.messageID, author: event.senderID, apiUrl: link });
+                }
+            }, event.messageID);
+        }
+
+        if (args[0] === 'remove') {
+            const fina = xalman.replace("remove ", "");
+            const dat = (await axios.get(`${link}?remove=${encodeURIComponent(fina)}&senderID=${uid}`)).data.message;
+            return api.sendMessage(dat, event.threadID, event.messageID);
+        }
+        if (args[0] === 'rm' && xalman.includes('-')) {
+            const [fi, f] = xalman.replace("rm ", "").split(/\s*-\s*/);
+            const da = (await axios.get(`${link}?remove=${encodeURIComponent(fi)}&index=${f}`)).data.message;
+            return api.sendMessage(da, event.threadID, event.messageID);
+        }
+        if (args[0] === 'list') {
+            if (args[1] === 'all') {
+                const data = (await axios.get(`${link}?list=all`)).data;
+                const limit = parseInt(args[2]) || 100;
+                const limited = data?.teacher?.teacherList?.slice(0, limit);
+                const teachers = await Promise.all(limited.map(async (item) => {
+                    const number = Object.keys(item)[0];
+                    const value = item[number];
+                    const name = await usersData.getName(number).catch(() => number) || "Not found";
+                    return { name, value };
+                }));
+                teachers.sort((a, b) => b.value - a.value);
+                const output = teachers.map((t, i) => `${i + 1}/ ${t.name}: ${t.value}`).join('\n');
+                return api.sendMessage(`Total Teach = ${data.length}\n👑 | List of Teachers of baby\n${output}`, event.threadID, event.messageID);
             } else {
                 const d = (await axios.get(`${link}?list=all`)).data;
                 return api.sendMessage(`❇️ | Total Teach = ${d.length || "api off"}\n♻️ | Total Response = ${d.responseLength || "api off"}`, event.threadID, event.messageID);
@@ -110,6 +163,8 @@ module.exports.config = {
         console.log(e);
         api.sendMessage("Check console for error", event.threadID, event.messageID);
     }
+};
+
 module.exports.onReply = async ({ api, event, Reply }) => {
     try {
         if (event.type == "message_reply") {
