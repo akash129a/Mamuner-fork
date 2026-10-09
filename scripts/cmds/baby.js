@@ -16,31 +16,50 @@ const utils = {
         };
         return text.split('').map(char => monospaceMap[char] || char).join('');
     },
-    realMention: (name, uid, message) => { 
-        const finalMessage = `[ ${name} ]\n\n${message}`; 
-        return { body: finalMessage, mentions: [{ tag: name, id: uid }] }; 
-    }, 
-    normalMention: (name, uid, message) => { 
-        return { body: message, mentions: [{ tag: name, id: uid }] }; 
-    }, 
-    getRandomGreeting: () => { 
-        const greetings = [""]; 
-        return greetings[Math.floor(Math.random() * greetings.length)]; 
+    realMention: (name, uid, message) => {
+        const finalMessage = `[ ${name} ]\n\n${message}`;
+        return { body: finalMessage, mentions: [{ tag: name, id: uid }] };
+    },
+    normalMention: (name, uid, message) => {
+        return { body: message, mentions: [{ tag: name, id: uid }] };
+    },
+    getRandomGreeting: () => {
+        const greetings = [""];
+        return greetings[Math.floor(Math.random() * greetings.length)];
     }
 };
+
+// ===== Tinny / Tinni special praise =====
+// Tinny, Tinni, Tini, Tinny, তিন্নি, তিনি্ন — যেকোনো বানানে ধরবে
+const TINNY_REGEX = /(tinn?[iy]|tinny|tinni|tinnie|তিন্নি|তিন্নী)/i;
+
+const tinnyPraises = [
+    "Tinny? ওহ, ও তো অনেক ভালো মেয়ে 🥰 মনটা একদম আয়নার মতো পরিষ্কার!",
+    "Tinny মানেই মিষ্টি হাসি আর সুন্দর একটা মন 🌸✨",
+    "Tinny এত কিউট আর কেয়ারিং, ওর সাথে কথা বললে মন ভালো হয়ে যায় 💖",
+    "Tinny-র মতো মেয়ে খুব কম পাওয়া যায়, সত্যিই অনেক স্পেশাল 😇",
+    "Tinny যেখানে থাকে সেখানে আলো ছড়িয়ে যায় 🌙✨",
+    "Tinny অনেক ভদ্র, বুদ্ধিমতী আর সুন্দর মনের মানুষ 🌷",
+    "Tinny-র নাম শুনলেই মনে হয় একটা শান্ত, মিষ্টি সকাল 🌅💕",
+    "Tinny মানে একদম পিওর হার্ট ❤️ ওকে সবাই ভালোবাসে!",
+    "Tinny এর মতো মিষ্টি স্বভাবের মেয়ে পেলে যে কেউ ভাগ্যবান 🍀",
+    "Tinny সবসময় হাসিখুশি থাকুক, আল্লাহ ওকে অনেক ভালো রাখুক 🤲💝",
+    "Tinny কেমন মেয়ে জানতে চাও? একদম পরীর মতো ভালো, আর মনটা সোনার মতো 👑✨",
+    "Tinny-র হাসি দেখলে দিনটাই সুন্দর হয়ে যায় 😊🌼"
+];
+
+const getTinnyPraise = () => tinnyPraises[Math.floor(Math.random() * tinnyPraises.length)];
+const hasTinny = (text) => !!text && TINNY_REGEX.test(text);
+
+// teach / remove / list ইত্যাদি কমান্ড হলে Tinny-র প্রশংসা দেবে না (যাতে teach নষ্ট না হয়)
+const isCommandText = (text) =>
+    /^(bby|baby|bot|jan|babu|alya|nishu|nusrat|hafsa)?\s*(teach|remove|rm|list|msg|edit)\b/i.test((text || "").trim());
 
 module.exports.config = {
     name: "bby",
     aliases: ["baby", "bot", "nishu", "nusrat", "hafsa"],
-    version: "10.1",
+    version: "10.2",
     author: "dipto cdi | xalman",
-    countDown: 0,
-    role: 0,
-    description: "better than all sim simi api by dipto",
-    category: "chat",
-    guide: {
-        en: "{pn} [anyMessage] OR\nteach [YourMessage] - [Reply1], [Reply2], [Reply3]... OR\nteach [react] [YourMessage] - [react1], [react2], [react3]... OR\nremove [YourMessage] OR\nrm [YourMessage] - [indexNumber] OR\nmsg [YourMessage] OR\nlist OR \nall OR\nedit [YourMessage] - [NewMessage]"
-    }
 };
 
 module.exports.onStart = async ({ api, event, args, usersData }) => {
@@ -54,6 +73,18 @@ module.exports.onStart = async ({ api, event, args, usersData }) => {
             const ran = ["Bolo baby ❤️", "Type baby help", "Kichu bolooo", "Sunno ki?"];
             return api.sendMessage(ran[Math.floor(Math.random() * ran.length)], event.threadID, event.messageID);
         }
+
+        // Tinny-র নাম নিলে প্রশংসা করবে
+        const cmd = args[0].toLowerCase();
+        const isSubCommand = ["remove", "rm", "list", "msg", "edit", "teach"].includes(cmd);
+        if (!isSubCommand && hasTinny(xalman)) {
+            return api.sendMessage(utils.monospace(getTinnyPraise()), event.threadID, (error, info) => {
+                if (info) {
+                    global.GoatBot.onReply.set(info.messageID, { commandName: this.config.name, type: "reply", messageID: info.messageID, author: event.senderID, apiUrl: link });
+                }
+            }, event.messageID);
+        }
+
         if (args[0] === 'remove') {
             const fina = xalman.replace("remove ", "");
             const dat = (await axios.get(`${link}?remove=${encodeURIComponent(fina)}&senderID=${uid}`)).data.message;
@@ -94,10 +125,6 @@ module.exports.onStart = async ({ api, event, args, usersData }) => {
             const dA = (await axios.get(`${link}?edit=${encodeURIComponent(args[1])}&replace=${encodeURIComponent(parts[1])}&senderID=${uid}`)).data.message;
             return api.sendMessage(`changed ${dA}`, event.threadID, event.messageID);
         }
-        if (args[0] === 'teach' && args[1] === 'react') {
-            const parts = xalman.replace("teach react ", "").split(/\s*-\s*/);
-            if (parts.length < 2) return api.sendMessage('❌ | Invalid format! Use: teach react message - ❤️, 😀', event.threadID, event.messageID);
-            const msg = parts[0].trim();
             const reacts = parts[1].trim();
             const res = await axios.get(`${link}?teach=${encodeURIComponent(msg)}&react=${encodeURIComponent(reacts)}`);
             return api.sendMessage(`✅ Reacts added: ${res.data.message}`, event.threadID, event.messageID);
@@ -136,7 +163,18 @@ module.exports.onStart = async ({ api, event, args, usersData }) => {
 module.exports.onReply = async ({ api, event, Reply }) => {
     try {
         if (event.type == "message_reply") {
-            const a = (await axios.get(`${await baseApiUrl()}/baby?text=${encodeURIComponent(event.body?.toLowerCase())}&senderID=${event.senderID}`)).data.reply;
+            const userText = event.body?.toLowerCase() || "";
+
+            // রিপ্লাইতে Tinny-র নাম থাকলে প্রশংসা
+            if (hasTinny(userText)) {
+                return await api.sendMessage(utils.monospace(getTinnyPraise()), event.threadID, (error, info) => {
+                    if (info) {
+                        global.GoatBot.onReply.set(info.messageID, { commandName: this.config.name, type: "reply", messageID: info.messageID, author: event.senderID });
+                    }
+                }, event.messageID);
+            }
+
+            const a = (await axios.get(`${await baseApiUrl()}/baby?text=${encodeURIComponent(userText)}&senderID=${event.senderID}`)).data.reply;
             const replyText = utils.monospace(a);
             await api.sendMessage(replyText, event.threadID, (error, info) => {
                 global.GoatBot.onReply.set(info.messageID, { commandName: this.config.name, type: "reply", messageID: info.messageID, author: event.senderID });
@@ -150,6 +188,18 @@ module.exports.onReply = async ({ api, event, Reply }) => {
 module.exports.onChat = async ({ api, event, usersData }) => {
     try {
         const body = event.body ? event.body.toLowerCase() : "";
+        if (!body) return;
+
+        // কেউ Tinny-র নাম নিলেই (prefix ছাড়াও) ভালো ভালো কথা বলবে
+        if (hasTinny(body) && !isCommandText(body)) {
+            await api.sendMessage(utils.monospace(getTinnyPraise()), event.threadID, (error, info) => {
+                if (info) {
+                    global.GoatBot.onReply.set(info.messageID, { commandName: this.config.name, type: "reply", messageID: info.messageID, author: event.senderID });
+                }
+            }, event.messageID);
+            return;
+        }
+
         if (body.startsWith("baby") || body.startsWith("bby") || body.startsWith("bot") || body.startsWith("jan") || body.startsWith("babu") || body.startsWith("alya") || body.startsWith("nishu") || body.startsWith("nusrat") || body.startsWith("hafsa")) {
             const arr = body.replace(/^\S+\s*/, "");
             const uid = event.senderID;
